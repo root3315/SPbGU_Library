@@ -533,7 +533,8 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
   .reader-note { max-width: 740px; margin-inline: auto; }
 }
 @media (min-width: 1520px) {
-  .reader-aside { display: block; grid-column: 1; grid-row: 2; justify-self: end; width: 176px; }
+  .reader { grid-template-columns: 176px minmax(0, 960px); justify-content: center; }
+  .reader-aside { display: block; grid-column: 1; grid-row: 2; }
 }
 @media (min-width: 861px) {
   .filters { max-height: calc(100vh - var(--top-h) - 24px); overflow-y: auto; scrollbar-width: thin; }
