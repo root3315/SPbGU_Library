@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Электронная библиотека СПбГУ — прототип</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="description" content="Прототип интерфейса электронной библиотеки">
+  <script>
+    /* Тема ставится до первой отрисовки, иначе ночью вспыхнет светлый экран */
+    try {
+      if (JSON.parse(localStorage.getItem('theme')) === 'night') document.documentElement.classList.add('night');
+    } catch { /* приватный режим */ }
+  </script>
+  <style>html.night { background: #161614; color-scheme: dark; }</style>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Manrope:wght@800&family=PT+Serif:wght@400;700&display=swap" rel="stylesheet">
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <a class="skip" href="#view">К содержанию</a>
+  <header class="top">
+    <a class="brand" href="#/" aria-label="Библиотека СПбГУ, на главную">Библиотека <span>СПбГУ</span></a>
+    <div class="top-right">
+      <nav aria-label="Основные разделы">
+        <a href="#/catalog" data-nav="catalog">Каталог</a>
+        <a href="#/shelf" data-nav="shelf">Моя полка <span class="count" data-shelf-count></span></a>
+      </nav>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="Тёмная тема" aria-pressed="false">
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 14.2A8 8 0 0 1 9.8 4.5a8 8 0 1 0 9.7 9.7z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="view" tabindex="-1"></main>
+
+  <nav class="tabbar" aria-label="Разделы сайта">
+    <a href="#/" data-nav="home">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10v8.5h11V10"/></svg>
+      <span>Главная</span>
+    </a>
+    <a href="#/catalog" data-nav="catalog">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5.5h4v13H5zM10.5 5.5h4v13h-4z"/><path d="m16.2 6.2 3.2-.8 3 12.6-3.2.8z" transform="translate(-1.5 0)"/></svg>
+      <span>Каталог</span>
+    </a>
+    <a href="#/shelf" data-nav="shelf">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5h10v15l-5-3.6-5 3.6z"/></svg>
+      <span>Полка</span>
+      <span class="tab-count" data-shelf-count></span>
+    </a>
+  </nav>
+
+  <footer class="foot">
+    <p>Прототип интерфейса, не официальный сайт университета. Шифры, доступность и подборки условные.</p>
+  </footer>
+</body>
+</html>

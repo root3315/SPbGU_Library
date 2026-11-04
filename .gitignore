@@ -1,0 +1,12 @@
+# Локальные настройки
+.claude/
+.impeccable/
+CLAUDE.md
+docs/feedback-checklist.md
+
+# Система и редакторы
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+__pycache__/
