@@ -4,7 +4,7 @@ export const addressKey = () => location.hash || '#/';
 export const nav = {
   address: addressKey(),
   catalog: '#/catalog',
-  back: { label: '← Каталог', href: () => nav.catalog },
+  back: { label: 'Каталог', href: () => nav.catalog },
   lastBook: null,
   linkClick: false,
   restoreScroll: false,

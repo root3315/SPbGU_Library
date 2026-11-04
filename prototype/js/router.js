@@ -20,9 +20,9 @@ const ROUTES = {
 };
 const ACTIVE_NAV = { '': 'home', book: 'catalog', read: 'catalog' };
 const BACK_LINKS = {
-  catalog: { label: '← Каталог', href: () => nav.catalog },
-  shelf: { label: '← Моя полка', href: () => '#/shelf' },
-  '': { label: '← На главную', href: () => '#/' },
+  catalog: { label: 'Каталог', href: () => nav.catalog },
+  shelf: { label: 'Моя полка', href: () => '#/shelf' },
+  '': { label: 'На главную', href: () => '#/' },
 };
 
 export function parseAddress() {

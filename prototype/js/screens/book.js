@@ -46,6 +46,11 @@ export function bookScreen({ id }) {
               <button type="button" class="btn btn-quiet" id="saveBook">${saveLabel(b.id)}</button>
             </div>
           </div>
+          <dl class="book-facts">
+            <div><dt>Год</dt><dd>${b.year}</dd></div>
+            <div><dt>Страниц</dt><dd>${b.pages}</dd></div>
+            <div><dt>Раздел</dt><dd>${esc(library.sections[b.section])}</dd></div>
+          </dl>
         </article>
       </div>
       <section class="block">

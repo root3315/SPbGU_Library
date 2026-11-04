@@ -37,7 +37,7 @@ export const store = {
 export function updateShelfCount() {
   const count = store.shelf().length;
   document.querySelectorAll('[data-shelf-count]').forEach((el) => {
-    el.textContent = count || '';
-    el.style.visibility = count ? 'visible' : 'hidden';
+    if (count) el.textContent = count;
+    el.classList.toggle('on', count > 0);
   });
 }

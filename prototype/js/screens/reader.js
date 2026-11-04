@@ -18,11 +18,11 @@ export function readerScreen({ id }) {
     html: `
     <div class="reader">
       <div class="reader-bar">
-        <a class="back" href="#/book/${b.id}">← Назад</a>
-        <div class="reader-tools" role="group" aria-label="Размер текста">
+        <a class="back" href="#/book/${b.id}">Назад</a>
+        ${b.text ? `<div class="reader-tools" role="group" aria-label="Размер текста">
           <button type="button" id="fontDown" aria-label="Уменьшить шрифт">А−</button>
           <button type="button" id="fontUp" aria-label="Увеличить шрифт">А+</button>
-        </div>
+        </div>` : ''}
       </div>
       <aside class="reader-aside book-cover">${cover(b, { named: true })}</aside>
       <article class="reader-page">
@@ -43,6 +43,6 @@ function bind() {
     store.setFontSize(size);
   };
   body.style.fontSize = `${size}px`;
-  document.getElementById('fontDown').addEventListener('click', () => setSize(size - 2));
-  document.getElementById('fontUp').addEventListener('click', () => setSize(size + 2));
+  document.getElementById('fontDown')?.addEventListener('click', () => setSize(size - 2));
+  document.getElementById('fontUp')?.addEventListener('click', () => setSize(size + 2));
 }

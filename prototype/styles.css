@@ -118,10 +118,29 @@ h1:focus { outline: none; }
 .brand span { color: var(--accent); }
 .top-right { display: flex; align-items: center; gap: 8px; }
 .top nav { display: flex; gap: 4px; color: var(--ink-2); font-weight: 500; }
-.top nav a { padding: 7px 12px; border-radius: var(--r-s); transition: color var(--fast) ease, background var(--fast) ease; }
+.top nav a { position: relative; padding: 7px 12px; border-radius: var(--r-s); transition: color var(--fast) ease, background var(--fast) ease; }
 .top nav a:hover, .top nav a[aria-current] { background: var(--flat); color: var(--ink); }
 .top nav a:active { background: var(--flat-hover); }
-.count { display: inline-block; min-width: 2ch; margin-left: 4px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+/* Счётчик полки лежит поверх угла: размер кнопки от него не зависит */
+.count, .tab-count {
+  position: absolute;
+  min-width: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--canvas);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+  text-align: center;
+  opacity: 0;
+  transform: scale(.6);
+  transition: opacity var(--fast) ease, transform var(--mid) var(--ease);
+}
+.count { top: -3px; right: -3px; }
+.tab-count { top: 3px; left: calc(50% + 7px); }
+.count.on, .tab-count.on { opacity: 1; transform: none; }
 
 .theme-toggle {
   display: grid;
@@ -447,7 +466,15 @@ legend { margin-bottom: 6px; padding: 0; font-weight: 600; }
 .empty h1 { margin-bottom: 8px; font-size: 36px; }
 
 /* ---------- Страница книги ---------- */
-.back { display: inline-block; margin-bottom: 20px; color: var(--ink-2); font-weight: 500; transition: color var(--fast) ease; }
+.back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 20px; color: var(--ink-2); font-weight: 500; transition: color var(--fast) ease; }
+.back::before {
+  content: '';
+  flex: none;
+  width: 16px;
+  height: 16px;
+  background: currentcolor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23000' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 8H3.5M7.5 3.5 3 8l4.500 4.500'/%3E%3C/svg%3E") center / contain no-repeat;
+}
 .back:hover { color: var(--ink); }
 .book { display: grid; grid-template-columns: minmax(200px, 300px) minmax(0, 1fr); gap: clamp(28px, 5vw, 64px); align-items: center; }
 .book-card { padding: clamp(24px, 4vw, 44px); border-radius: var(--r-l); background: var(--card); box-shadow: var(--shadow); }
@@ -463,6 +490,9 @@ legend { margin-bottom: 6px; padding: 0; font-weight: 600; }
 .book-code small { grid-column: 1 / -1; color: var(--ink-2); font-size: 13px; }
 .book-code .text-btn { min-width: 96px; text-align: right; }
 .book-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.book-facts { display: none; margin: 0; }
+.book-facts dt { color: var(--ink-2); font-size: 14px; }
+.book-facts dd { margin: 2px 0 0; font-size: 18px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* ---------- Читалка ---------- */
 body:has(.reader) .top { position: static; view-transition-name: none; }
@@ -494,9 +524,16 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
 
 /* ---------- Широкие экраны ---------- */
 @media (min-width: 1100px) {
-  .reader { display: grid; grid-template-columns: clamp(200px, 19vw, 280px) minmax(0, 1fr); gap: 0 clamp(32px, 4vw, 56px); width: min(1320px, 100%); padding-inline: var(--gutter); }
-  .reader-bar { grid-column: 1 / -1; padding-inline: 0; }
-  .reader-aside { position: sticky; top: 72px; display: block; align-self: start; }
+  .reader { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 960px) minmax(0, 1fr); gap: 0 clamp(32px, 3vw, 48px); width: 100%; padding-inline: var(--gutter); }
+  .reader-bar { grid-column: 2; padding-inline: 0; }
+  .reader-bar .back { margin-block: 0; }
+  .reader-page { grid-column: 2; grid-row: 2; }
+  .reader-author, .reader-page h1, .reader-note { text-align: center; }
+  .reader-body { width: fit-content; max-width: 37em; margin-inline: auto; }
+  .reader-note { max-width: 740px; margin-inline: auto; }
+}
+@media (min-width: 1520px) {
+  .reader-aside { display: block; grid-column: 1; grid-row: 2; justify-self: end; width: 176px; }
 }
 @media (min-width: 861px) {
   .filters { max-height: calc(100vh - var(--top-h) - 24px); overflow-y: auto; scrollbar-width: thin; }
@@ -510,10 +547,21 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
 }
 @media (min-width: 1500px) {
   .book { grid-template-columns: 340px minmax(0, 1fr); align-items: stretch; }
-  .book-card { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: center; column-gap: clamp(40px, 5vw, 96px); }
+  .book-card { display: grid; grid-template: 1fr auto / minmax(0, 1fr) 300px; align-items: start; gap: 28px clamp(40px, 5vw, 96px); }
   .book-main, .book-side { display: block; }
   .book-how { margin-top: 0; }
   .book-actions { flex-direction: column; margin-top: 16px; }
+  .book-meta { display: none; }
+  .book-facts { display: flex; grid-column: 1 / -1; gap: clamp(40px, 5vw, 96px); padding-top: 20px; border-top: 1px solid var(--line); }
+}
+@media (min-width: 1500px) and (max-width: 1679px) {
+  .book-card { column-gap: 56px; }
+  .book-card h1 { font-size: 48px; }
+}
+@media (min-width: 861px) and (max-width: 1499px) {
+  .book { align-items: stretch; }
+  .book-card { display: flex; flex-direction: column; }
+  .book-actions { margin-top: auto; padding-top: 24px; }
 }
 @media (min-width: 1680px) {
   .tiles-row { --row: 8; }
@@ -631,7 +679,6 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
   .tabbar a[aria-current] { color: var(--ink); font-weight: 600; }
   .tabbar a[aria-current] svg { stroke-width: 2.2; }
   .tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentcolor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: stroke-width var(--fast) ease; }
-  .tab-count { position: absolute; top: 3px; left: calc(50% + 7px); min-width: 16px; padding: 0 4px; border-radius: 8px; background: var(--accent); color: var(--canvas); font-size: 11px; line-height: 16px; text-align: center; }
   body:has(.reader) { padding-bottom: 0; }
   body:has(.reader) .tabbar, body:has(.reader) .foot { display: none; }
 
