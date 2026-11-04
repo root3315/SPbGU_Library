@@ -32,10 +32,12 @@ export function bookScreen({ id }) {
       <div class="book">
         <div class="book-cover">${cover(b, { named: true })}</div>
         <article class="book-card">
-          <p class="book-author">${esc(b.author)}</p>
-          <h1>${esc(b.title)}</h1>
-          <p class="book-meta">${b.year} год, ${countPages(b.pages)}</p>
-          <p class="book-about">${esc(b.about)}</p>
+          <div class="book-main">
+            <p class="book-author">${esc(b.author)}</p>
+            <h1>${esc(b.title)}</h1>
+            <p class="book-meta">${b.year} год, ${countPages(b.pages)}</p>
+            <p class="book-about">${esc(b.about)}</p>
+          </div>
           <div class="book-side">
             <p class="book-how">${HOW_TO_GET[b.access]}</p>
             ${code}

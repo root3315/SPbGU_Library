@@ -12,7 +12,7 @@ export const hyphenate = (text) => text.replace(/[а-яё]{10,}/gi, (word) => wo
   '$1\u00AD',
 ));
 
-export const plural = (n, one, few, many) => {
+const plural = (n, one, few, many) => {
   const a = n % 100; const b = n % 10;
   if (a > 10 && a < 20) return many;
   if (b === 1) return one;

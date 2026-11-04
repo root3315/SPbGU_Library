@@ -182,15 +182,20 @@ function bind(filters, signal) {
     ? found.map((b) => b.id).join()
     : `?${filters.q.trim()}|${filters.section}|${filters.access}`);
 
-  function render() {
-    const found = library.list(filters);
-    shownKey = keyOf(found);
+  function renderSummary(found) {
     const chosen = [library.sections[filters.section], library.access[filters.access]?.label].filter(Boolean);
     const summary = `Нашлось ${countBooks(found.length)}`;
     count.textContent = chosen.length ? `${summary}: ${chosen.join(', ')}` : summary;
     clear.hidden = !chosen.length;
     toggle.textContent = chosen.length ? `Фильтры: ${chosen.length}` : 'Фильтры';
     done.textContent = `Показать ${countBooks(found.length)}`;
+    return chosen;
+  }
+
+  function render() {
+    const found = library.list(filters);
+    shownKey = keyOf(found);
+    const chosen = renderSummary(found);
     list.innerHTML = found.length
       ? `<ul class="tiles tiles-fill">${found.map(tile).join('')}</ul>`
       : `<div class="empty"><p>${chosen.length
@@ -211,7 +216,11 @@ function bind(filters, signal) {
   let updateId = 0;
   function update() {
     syncAddress();
-    if (keyOf(library.list(filters)) === shownKey) return;
+    const found = library.list(filters);
+    if (keyOf(found) === shownKey) {
+      renderSummary(found);
+      return;
+    }
     if (reducedMotion()) {
       render();
       keepListInView();

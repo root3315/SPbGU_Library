@@ -1,3 +1,4 @@
+import { cover } from '../components.js';
 import { esc } from '../format.js';
 import { library } from '../library.js';
 import { store } from '../store.js';
@@ -23,6 +24,7 @@ export function readerScreen({ id }) {
           <button type="button" id="fontUp" aria-label="Увеличить шрифт">А+</button>
         </div>
       </div>
+      <aside class="reader-aside book-cover">${cover(b, { named: true })}</aside>
       <article class="reader-page">
         <p class="reader-author">${esc(b.author)}</p>
         <h1>${esc(b.title)}</h1>
