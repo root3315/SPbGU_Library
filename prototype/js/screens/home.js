@@ -28,14 +28,14 @@ export function homeScreen() {
             <p class="sr" id="heroStatus" role="status"></p>
           </div>
           <p class="often">Часто ищут:
-            <button type="button" data-try="Менделеев">Менделеев</button>,
-            <button type="button" data-try="Достоевский">Достоевский</button>,
-            <button type="button" data-try="право">право</button>
+            <button type="button" data-try="Бегалов">Бегалов</button>,
+            <button type="button" data-try="пенсия">пенсия</button>,
+            <button type="button" data-try="Узбекистан">Узбекистан</button>
           </p>
         </div>
         <div class="hero-side">
-          <h2>Можно читать прямо сейчас</h2>
-          <ul class="tiles tiles-3">${library.readable().map(tile).join('')}</ul>
+          <h2>Новые издания</h2>
+          <ul class="tiles tiles-3">${library.newest(3).map(tile).join('')}</ul>
         </div>
       </section>
 
@@ -45,8 +45,8 @@ export function homeScreen() {
       </section>
 
       <section class="block">
-        <h2>Классические университетские курсы</h2>
-        <ul class="tiles tiles-row">${library.courses().map(tile).join('')}</ul>
+        <h2>Издания Санкт-Петербургского университета</h2>
+        <ul class="tiles tiles-row">${library.university().map(tile).join('')}</ul>
       </section>
     </div>`,
   };

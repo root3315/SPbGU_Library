@@ -8,18 +8,16 @@ const ICONS = {
   section: {
     '': 'M3.5 3.5h5v5h-5zM11.5 3.5h5v5h-5zM3.5 11.5h5v5h-5zM11.5 11.5h5v5h-5z',
     lit: 'M10 5.5C8 4 5.5 3.8 3 4.2v11c2.5-.4 5-.2 7 1.3 2-1.5 4.5-1.7 7-1.3v-11c-2.5-.4-5-.2-7 1.3zM10 5.5v11',
-    nat: 'M8 3h4M8.7 3v5L4.2 15a1.4 1.4 0 0 0 1.2 2.1h9.2a1.4 1.4 0 0 0 1.2-2.1L11.3 8V3M6.5 12.5h7',
-    math: 'M15 4H5l6 6-6 6h10',
+    tech: 'M3.5 4.5h13v9h-13zM7 16.5h6',
     hist: 'M5 3h10M5 17h10M6 3c0 4 8 6 8 14M14 3c0 4-8 6-8 14',
     law: 'M10 3v14M6 17h8M4 6h12M4 6l-2 5h4zM16 6l-2 5h4z',
     soc: 'M3.5 16.5h13M6 16v-5M10 16V5M14 16V8.5',
-    phil: 'M7 14h6M8 17h4M10 3a5 5 0 0 0-3 9c.6.5 1 1.2 1 2h4c0-.8.4-1.5 1-2a5 5 0 0 0-3-9z',
   },
-  access: {
-    '': 'M3 7l7-3.5L17 7l-7 3.5zM3 11l7 3.5 7-3.5',
-    online: 'M3.5 4.5h13v9h-13zM7 16.5h6',
-    hall: 'M3 8l7-4.5L17 8M4.5 8.5v7M8.2 8.5v7M11.8 8.5v7M15.5 8.5v7M3 16.5h14',
-    paper: 'M5 4.5A1.5 1.5 0 0 1 6.5 3H15v12H6.5A1.5 1.5 0 0 0 5 16.5zM5 16.5A1.5 1.5 0 0 0 6.5 18H15',
+  lang: {
+    '': 'M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM3 10h14M10 3c2 2 3 4.3 3 7s-1 5-3 7c-2-2-3-4.3-3-7s1-5 3-7z',
+    ru: 'M4 4.5h12v9H9l-4 3v-3H4z',
+    uz: 'M4 4.5h12v9H9l-4 3v-3H4z',
+    en: 'M4 4.5h12v9H9l-4 3v-3H4z',
   },
 };
 
@@ -28,16 +26,16 @@ function readFilters(params) {
   return {
     q: params.get('q') || '',
     section: pick(params.get('s'), library.sections),
-    access: pick(params.get('a'), library.access),
+    lang: pick(params.get('l'), library.languages),
     sort: pick(params.get('sort'), SORTS) || 'title',
   };
 }
 
-function filtersToHash({ q, section, access, sort }) {
+function filtersToHash({ q, section, lang, sort }) {
   const params = new URLSearchParams();
   if (q.trim()) params.set('q', q.trim());
   if (section) params.set('s', section);
-  if (access) params.set('a', access);
+  if (lang) params.set('l', lang);
   if (sort !== 'title') params.set('sort', sort);
   const query = params.toString();
   return `#/catalog${query ? `?${query}` : ''}`;
@@ -74,9 +72,9 @@ export function catalogScreen({ params }) {
                 ${option('section', '', 'Все разделы')}
                 ${Object.entries(library.sections).map(([k, v]) => option('section', k, v)).join('')}
               </fieldset>
-              <fieldset><legend>Как читать</legend>
-                ${option('access', '', 'Любым способом')}
-                ${Object.entries(library.access).map(([k, v]) => option('access', k, v.label)).join('')}
+              <fieldset><legend>Язык</legend>
+                ${option('lang', '', 'Все языки')}
+                ${Object.entries(library.languages).map(([k, v]) => option('lang', k, v)).join('')}
               </fieldset>
             </div>
             <div class="sheet-foot"><button type="button" class="btn btn-main filters-done" id="filtersDone"></button></div>
@@ -183,10 +181,10 @@ function bind(filters, signal) {
   let shownKey = null;
   const keyOf = (found) => (found.length
     ? found.map((b) => b.id).join()
-    : `?${filters.q.trim()}|${filters.section}|${filters.access}`);
+    : `?${filters.q.trim()}|${filters.section}|${filters.lang}`);
 
   function renderSummary(found) {
-    const chosen = [library.sections[filters.section], library.access[filters.access]?.label].filter(Boolean);
+    const chosen = [library.sections[filters.section], library.languages[filters.lang]].filter(Boolean);
     const summary = `Нашлось ${countBooks(found.length)}`;
     count.textContent = chosen.length ? `${summary}: ${chosen.join(', ')}` : summary;
     count.classList.toggle('sr', !found.length);
@@ -248,7 +246,7 @@ function bind(filters, signal) {
 
   function reset({ query = false } = {}) {
     filters.section = '';
-    filters.access = '';
+    filters.lang = '';
     if (query) {
       filters.q = '';
       search.value = '';

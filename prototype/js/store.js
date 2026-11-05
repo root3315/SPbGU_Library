@@ -1,4 +1,4 @@
-/* Локальное хранилище: сервера у прототипа нет, всё лежит в браузере */
+/* Локальное хранилище: полка и тема лежат в браузере */
 import { library } from './library.js';
 
 function read(key) {
@@ -15,10 +15,6 @@ function write(key, value) {
   } catch { /* приватный режим */ }
 }
 
-const defaultFontSize = () => (innerWidth < 560 ? 18 : 20);
-export const FONT_SIZE = { min: 16, max: 28 };
-export const clampFontSize = (size) => Math.min(FONT_SIZE.max, Math.max(FONT_SIZE.min, size));
-
 export const store = {
   shelf() {
     const ids = read('shelf');
@@ -28,11 +24,6 @@ export const store = {
     const shelf = store.shelf();
     write('shelf', shelf.includes(id) ? shelf.filter((x) => x !== id) : [...shelf, id]);
   },
-  fontSize() {
-    const size = read('reader')?.size;
-    return Number.isFinite(size) ? clampFontSize(size) : defaultFontSize();
-  },
-  setFontSize: (size) => write('reader', { size }),
   setTheme: (theme) => write('theme', theme),
 };
 

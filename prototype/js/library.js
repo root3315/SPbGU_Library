@@ -1,5 +1,5 @@
 /* Доступ к данным книг и поиск по ним */
-import { ACCESS, BOOKS, COURSES, SECTIONS } from './data.js';
+import { BOOKS, LANGUAGES, SECTIONS } from './data.js';
 
 const byId = Object.assign(Object.create(null), Object.fromEntries(BOOKS.map((b) => [b.id, b])));
 
@@ -9,7 +9,7 @@ const UZBEK = { ў: 'у', қ: 'к', ғ: 'г', ҳ: 'х' };
 const norm = (s) => String(s).toLowerCase().replace(/ё/g, 'е').replace(/[ўқғҳ]/g, (c) => UZBEK[c]);
 const words = (s) => norm(s).replace(/[.,;:!?«»"()/]/g, ' ').split(/\s+/).filter(Boolean);
 const searchIndex = new Map(BOOKS.map((b) => [b.id, words(
-  `${b.title} ${b.author} ${b.fullAuthor} ${b.year ?? ''} ${SECTIONS[b.section]} ${b.about} ${b.code}`,
+  `${b.title} ${b.author} ${b.fullAuthor} ${b.year ?? ''} ${SECTIONS[b.section]} ${b.about}`,
 ).flatMap((word) => [word, ...word.split('-')])]));
 
 function oneEditAway(a, b) {
@@ -44,23 +44,23 @@ export const SORTS = {
 
 export const library = {
   sections: SECTIONS,
-  access: ACCESS,
+  languages: LANGUAGES,
   has: (id) => Boolean(byId[id]),
   get: (id) => byId[id],
   getMany: (ids) => ids.map((id) => byId[id]).filter(Boolean),
   search: (query) => BOOKS.filter((b) => matches(b, query)),
-  readable: () => BOOKS.filter((b) => b.access === 'online'),
-  courses: () => COURSES.map((id) => byId[id]),
+  newest: (limit) => [...BOOKS].sort(SORTS.new.compare).slice(0, limit),
+  university: () => BOOKS.filter((b) => b.spbu),
   countInSection: (section) => BOOKS.filter((b) => b.section === section).length,
   related(b, limit) {
     const others = BOOKS.filter((x) => x.id !== b.id);
     const sameSection = others.filter((x) => x.section === b.section);
     return [...sameSection, ...others.filter((x) => x.section !== b.section)].slice(0, limit);
   },
-  list({ q = '', section = '', access = '', sort = 'title' }) {
+  list({ q = '', section = '', lang = '', sort = 'title' }) {
     return BOOKS
       .filter((b) => (!section || b.section === section)
-        && (!access || b.access === access)
+        && (!lang || b.lang === lang)
         && (!q.trim() || matches(b, q)))
       .sort(SORTS[sort].compare);
   },

@@ -339,37 +339,36 @@ input[type='search']::-webkit-search-cancel-button {
   justify-content: space-between;
   gap: 8%;
   aspect-ratio: 2 / 3;
-  padding: 11% 10% 11% 13%;
   overflow: hidden;
   border-radius: 2px;
   outline: 1px solid transparent;
   background: var(--c);
-  color: var(--t);
   box-shadow: var(--shadow-cover), var(--cover-edge);
   backface-visibility: hidden;
   transform: translateZ(calc(var(--d) / 2));
   transition: box-shadow var(--turn) var(--ease);
 }
-.cover::before { content: ''; position: absolute; inset: 0 auto 0 0; width: 4.5%; background: rgb(0 0 0 / 14%); }
-.cover-author { font: 500 max(8cqw, 11px)/1.25 var(--body); opacity: .85; }
-.cover-title { font: 400 13.5cqw/1.12 var(--book); overflow-wrap: break-word; }
-.cover[data-size='l'] .cover-title { font-size: 11cqw; }
-.cover[data-size='xl'] .cover-title { font-size: 10cqw; }
-.cover[data-layout='1'][data-size='xl'] .cover-title { font-weight: 400; }
-.cover[data-layout='1'] { flex-direction: column-reverse; }
-.cover[data-layout='1'] .cover-title { font-weight: 700; }
-.cover[data-layout='2'] { justify-content: center; padding-inline: 12%; text-align: center; }
-.cover[data-layout='2'] .cover-author { order: 2; }
-.cover[data-layout='2'] .cover-title { order: 1; padding-bottom: 8%; border-bottom: 1px solid currentcolor; }
-.cover-scan { padding: 0; }
+/* Обложка без снимка: рисунок и текст поверх него */
+.cover::before { content: ''; position: absolute; z-index: 1; inset: 0 auto 0 0; width: 4.5%; background: rgb(0 0 0 / 14%); }
+.cover-art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.cover-text { position: relative; display: flex; flex-direction: column; gap: 6cqw; width: 100%; color: #fff; }
+.cover[data-layout='arc'] .cover-text { justify-content: space-between; height: 100%; padding: 12cqw 9cqw 12cqw 13cqw; }
+.cover[data-layout='plate'] .cover-text, .cover[data-layout='ornament'] .cover-text { position: absolute; inset: auto 0 0; padding: 10cqw 9cqw 12cqw 13cqw; }
+.cover[data-layout='plate'] .cover-text { background: #f3ecdd; color: #27221c; }
+.cover[data-layout='ornament'] .cover-text { background: var(--c); }
+.cover-title { font: 700 12cqw/1.14 var(--book); overflow-wrap: break-word; }
+.cover[data-size='l'] .cover-title { font-size: 10.6cqw; }
+.cover[data-size='xl'] .cover-title { font-size: 9.4cqw; }
+.cover[data-size='xxl'] .cover-title { font-size: 8.2cqw; }
+.cover-author { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font: 500 max(6.4cqw, 9px)/1.25 var(--body); opacity: .85; }
 .cover-scan::before { display: none; }
 .cover-scan img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
 
 /* Миниатюра в результатах поиска плоская */
 .result .volume-box { flex: none; width: 38px; }
 .result .edge, .result .volume::after, .result .volume-box::before { display: none; }
-.result .cover { padding: 0; border-radius: 3px; box-shadow: none; transform: none; }
-.result .cover:not(.cover-scan) > * { display: none; }
+.result .cover { border-radius: 3px; box-shadow: none; transform: none; }
+.result .cover-text { display: none; }
 
 /* ---------- Ряды книг ---------- */
 .tiles { display: grid; gap: 28px clamp(14px, 2vw, 24px); }
@@ -486,11 +485,6 @@ legend { margin-bottom: 6px; padding: 0; font-weight: 600; }
 .book-about { max-width: 62ch; margin-top: 18px; font-size: 18px; line-height: 1.55; text-wrap: pretty; }
 .book-main, .book-side { display: contents; }
 .book-how { margin-top: 18px; color: var(--ink-2); }
-.book-code { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 16px; max-width: 420px; margin-top: 12px; padding: 12px 16px; border-radius: var(--r-m); background: var(--canvas); }
-.book-code p { color: var(--ink-2); }
-.book-code b { color: var(--ink); font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.book-code small { grid-column: 1 / -1; color: var(--ink-2); font-size: 13px; }
-.book-code .text-btn { min-width: 96px; text-align: right; }
 .book-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
 .book-facts { display: none; margin: 0; }
 .book-facts dt { color: var(--ink-2); font-size: 14px; }
@@ -502,15 +496,12 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
 .reader-bar { position: sticky; top: 0; z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 4px 12px; background: var(--canvas); font-weight: 500; }
 .reader-bar a { color: var(--ink-2); transition: color var(--fast) ease; }
 .reader-bar a:hover { color: var(--ink); }
-.reader-tools { display: flex; padding: 3px; border-radius: 12px; background: var(--flat); }
-.reader-tools button { min-width: 46px; min-height: 38px; padding: 0 10px; border: 0; border-radius: 9px; background: none; font-size: 15px; font-weight: 500; transition: background var(--fast) ease; }
-.reader-tools button:hover:not(:disabled) { background: var(--card); }
-.reader-tools button:disabled { color: var(--ink-2); opacity: .5; cursor: default; }
 .reader-page { padding: clamp(28px, 6vw, 64px); border-radius: var(--r-l); background: var(--card); box-shadow: var(--shadow); }
 .reader-aside { display: none; }
 .reader-author { margin-bottom: 6px; color: var(--ink-2); }
 .reader-page h1 { margin-bottom: 32px; font: 700 clamp(30px, 5vw, 44px)/1.12 var(--book); letter-spacing: -0.01em; }
-.reader-body { max-width: 44em; font: 400 20px/1.7 var(--book); white-space: pre-line; }
+.reader-scans { display: grid; gap: 16px; margin-top: 28px; }
+.reader-scan { display: block; width: 100%; height: auto; border-radius: 8px; background: var(--flat); box-shadow: var(--shadow); }
 .reader-note { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: 15px; }
 
 .foot { width: min(var(--page), 100%); margin: 0 auto; padding: 0 var(--gutter) 28px; color: var(--ink-2); font-size: 14px; }
@@ -535,7 +526,6 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
   .reader-bar .back { margin-block: 0; }
   .reader-page { grid-column: 2; grid-row: 2; }
   .reader-author, .reader-page h1, .reader-note { text-align: center; }
-  .reader-body { width: fit-content; max-width: 37em; margin-inline: auto; }
   .reader-note { max-width: 740px; margin-inline: auto; }
 }
 @media (min-width: 1520px) {
@@ -546,7 +536,7 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
   .filters { max-height: calc(100vh - var(--top-h) - 24px); overflow-y: auto; scrollbar-width: thin; }
 }
 @media (min-width: 1200px) {
-  .section-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .section-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
 @media (min-width: 1360px) {
   .tiles-row { --row: 7; }
@@ -602,7 +592,6 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
   .book-about { font-size: 16px; }
   .top nav a, .back, .reader-bar a { display: inline-flex; align-items: center; min-height: 44px; }
   .back { margin-bottom: 8px; }
-  .reader-tools button { min-height: 44px; }
 
   /* Фильтры: шторка снизу, высота и колонки считаются от места на экране */
   .filters-box { position: static; }
@@ -725,11 +714,8 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
   .tiles-fill .tile-title { margin-top: 8px; font-size: 14px; -webkit-line-clamp: 4; }
   .wrap-page > h1 + .tiles-fill { margin-top: 14px; }
   .tiles-fill .tile-author, .tiles-fill .tile-pages { font-size: 12px; line-height: 1.3; }
-  .tiles-fill .cover:not(.cover-scan) { flex-direction: column; justify-content: flex-start; padding: 12% 8% 12% 12%; text-align: left; }
   .tiles-fill .cover-author { display: none; }
-  .tiles-fill .cover .cover-title { padding: 0; border: 0; font-size: 13.5cqw; font-weight: 400; line-height: 1.15; }
-  .tiles-fill .cover[data-size='l'] .cover-title { font-size: 13cqw; }
-  .tiles-fill .cover[data-size='xl'] .cover-title { font-size: 12cqw; }
+  .tiles-fill .cover[data-size='xxl'] .cover-title { font-size: 9cqw; }
   .list-head { flex-wrap: wrap; row-gap: 0; margin: 8px 0; font-size: 14px; }
   .list-head p { flex: 1 0 100%; order: -1; white-space: normal; }
   .list-head .sort { margin-left: auto; }
@@ -746,10 +732,9 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
   .book-meta { margin-top: 6px; font-size: 14px; }
   .book-actions { order: 2; grid-column: 1 / -1; flex-wrap: nowrap; margin-top: 18px; }
   .book-actions .btn { flex: 1; padding: 0 12px; }
-  .book-about, .book-how, .book-code { order: 3; grid-column: 1 / -1; }
+  .book-about, .book-how { order: 3; grid-column: 1 / -1; }
   .book-about { margin-top: 16px; }
   .book-how { margin-top: 12px; }
-  .book-code { max-width: none; }
 
   /* Читалка: страница от края до края, ничего лишнего над текстом */
   .reader { padding-inline: 0; padding-bottom: 0; }

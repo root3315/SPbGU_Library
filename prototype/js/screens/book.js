@@ -5,29 +5,16 @@ import { nav } from '../nav.js';
 import { store, updateShelfCount } from '../store.js';
 import { missingScreen } from './missing.js';
 
-const HOW_TO_GET = {
-  online: 'Есть текст онлайн.',
-  hall: 'Бумажная книга в читальном зале. Назовите шифр библиотекарю.',
-  paper: 'Цифровой копии пока нет. Бумажную книгу выдают по шифру.',
-};
-
-const NO_CODE = 'Цифровой копии пока нет. О бумажном экземпляре спросите библиотекаря.';
-
 const saveLabel = (id) => (store.shelf().includes(id) ? 'Убрать с полки' : 'На мою полку');
 
 export function bookScreen({ id }) {
   const b = library.get(id);
   if (!b) return missingScreen();
   const near = library.related(b, 10);
-  const code = b.access === 'online' || !b.code ? '' : `<div class="book-code">
-      <p><span>Шифр</span> <b>${esc(b.code)}</b></p>
-      <button type="button" class="text-btn" id="copyCode">Скопировать</button>
-      <small>Номер книги в фонде, по нему её находят.</small>
-    </div>`;
 
   return {
     title: b.title,
-    bind: (signal) => bind(b, signal),
+    bind: () => bind(b),
     html: `
     <div class="wrap wrap-page">
       <a class="back" href="${esc(nav.back.href())}">${nav.back.label}</a>
@@ -41,10 +28,9 @@ export function bookScreen({ id }) {
             <p class="book-about">${esc(b.about)}</p>
           </div>
           <div class="book-side">
-            <p class="book-how">${b.code || b.access === 'online' ? HOW_TO_GET[b.access] : NO_CODE}</p>
-            ${code}
+            <p class="book-how">Цифровой копии пока нет. О бумажном экземпляре спросите библиотекаря.</p>
             <div class="book-actions">
-              <a class="btn btn-main" href="#/read/${encodeURIComponent(b.id)}">Читать</a>
+              <a class="btn btn-main" href="#/read/${encodeURIComponent(b.id)}">Смотреть страницы</a>
               <button type="button" class="btn btn-quiet" id="saveBook">${saveLabel(b.id)}</button>
             </div>
           </div>
@@ -52,35 +38,23 @@ export function bookScreen({ id }) {
             ${b.year ? `<div><dt>Год</dt><dd>${b.year}</dd></div>` : ''}
             ${b.pages ? `<div><dt>Страниц</dt><dd>${b.pages}</dd></div>` : ''}
             <div><dt>Раздел</dt><dd>${esc(library.sections[b.section])}</dd></div>
+            <div><dt>Язык</dt><dd>${esc(library.languages[b.lang])}</dd></div>
           </dl>
         </article>
       </div>
       <section class="block">
-        <h2>Что ещё почитать</h2>
+        <h2>Похожие издания</h2>
         <ul class="tiles tiles-row">${near.map(tile).join('')}</ul>
       </section>
     </div>`,
   };
 }
 
-function bind(b, signal) {
+function bind(b) {
   const save = document.getElementById('saveBook');
   save.addEventListener('click', () => {
     store.toggleShelf(b.id);
     updateShelfCount();
     save.textContent = saveLabel(b.id);
-  });
-  const copy = document.getElementById('copyCode');
-  let timer;
-  signal.addEventListener('abort', () => clearTimeout(timer));
-  copy?.addEventListener('click', async () => {
-    try {
-      await navigator.clipboard.writeText(b.code);
-      copy.textContent = 'Скопировано';
-    } catch {
-      copy.textContent = 'Не вышло';
-    }
-    clearTimeout(timer);
-    timer = setTimeout(() => { copy.textContent = 'Скопировать'; }, 1800);
   });
 }
