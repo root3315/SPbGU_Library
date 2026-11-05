@@ -1,5 +1,6 @@
-/* Страницы издания из сканов, по одной. Номер страницы живёт в адресе */
-import { esc, reducedMotion } from '../format.js';
+/* Просмотр издания как книги. Номер страницы живёт в адресе */
+import { createFlipbook } from '../flipbook.js';
+import { esc } from '../format.js';
 import { library } from '../library.js';
 import { nav } from '../nav.js';
 import { missingScreen } from './missing.js';
@@ -15,11 +16,18 @@ export function readerScreen({ id, params, signal }) {
   if (!b) return missingScreen();
   const wanted = Number.parseInt(params.get('p'), 10);
   const page = Math.min(b.scans, Math.max(1, wanted || 1));
-  const turn = (name, label) => (b.scans > 1
-    ? `<button type="button" class="reader-turn" id="${name}" aria-label="${label}">${arrow(name === 'pagePrev' ? 'prev' : 'next')}</button>` : '');
-  const numbers = b.scans > 1 ? `<nav class="reader-pages" id="pageList" aria-label="Выбор страницы">${
-    Array.from({ length: b.scans }, (_, i) => `<button type="button" data-page="${i + 1}" aria-label="Страница ${i + 1}">${i + 1}</button>`).join('')
-  }</nav>` : '';
+  const digits = String(b.scans).length;
+  const controls = b.scans > 1 ? `<form class="reader-controls" id="pageJump" novalidate>
+      <button type="button" class="reader-turn" id="pagePrev" aria-label="Предыдущая страница">${arrow('prev')}</button>
+      <label class="reader-go" id="pageGo">
+        <span class="reader-word">Страница</span>
+        <input id="pageInput" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="go" autocomplete="off" maxlength="${digits}" style="--digits:${digits}" aria-label="Номер страницы, всего ${b.scans}">
+        <span>из ${b.scans}</span>
+      </label>
+      <button type="button" class="reader-turn" id="pageNext" aria-label="Следующая страница">${arrow('next')}</button>
+      <button type="submit" class="btn btn-main reader-submit">Перейти</button>
+      <p class="sr" id="pageStatus" role="status"></p>
+    </form>` : '';
   return {
     title: b.title,
     bind: () => bind(b, page, signal),
@@ -28,25 +36,16 @@ export function readerScreen({ id, params, signal }) {
       <div class="reader-bar">
         <a class="back" href="#/book/${encodeURIComponent(b.id)}">Назад</a>
         <h1 class="reader-name" lang="${esc(b.lang)}">${esc(b.title)}</h1>
+        <button type="button" class="text-btn reader-zoom" id="pageZoom" aria-pressed="false">Крупнее</button>
       </div>
       <article class="reader-page">
         <p class="reader-note" id="pageNote"></p>
-        <figure class="reader-sheet" id="sheet">
-          <img class="reader-scan" id="scan" src="${pageUrl(b, page)}" width="1200" height="1700" alt="">
-        </figure>
+        <div class="reader-sheet" id="sheet"><div class="flipbook" id="flipbook"></div></div>
         <div class="reader-failed" id="scanFailed" hidden>
           <p>Страница не загрузилась.</p>
           <button type="button" class="btn btn-quiet" id="scanRetry">Повторить</button>
         </div>
-        <div class="reader-controls">
-          ${numbers}
-          <div class="reader-pager">
-            ${turn('pagePrev', 'Предыдущая страница')}
-            <p class="reader-count" id="pageCount" role="status"></p>
-            ${turn('pageNext', 'Следующая страница')}
-            <button type="button" class="btn btn-quiet reader-zoom" id="pageZoom" aria-pressed="false">Крупнее</button>
-          </div>
-        </div>
+        ${controls}
       </article>
     </div>`,
   };
@@ -54,39 +53,31 @@ export function readerScreen({ id, params, signal }) {
 
 function bind(b, first, signal) {
   const sheet = document.getElementById('sheet');
-  const scan = document.getElementById('scan');
   const prev = document.getElementById('pagePrev');
   const next = document.getElementById('pageNext');
-  const count = document.getElementById('pageCount');
   const note = document.getElementById('pageNote');
   const zoom = document.getElementById('pageZoom');
   const failed = document.getElementById('scanFailed');
-  const list = document.getElementById('pageList');
+  const form = document.getElementById('pageJump');
+  const input = document.getElementById('pageInput');
+  const goLabel = document.getElementById('pageGo');
+  const status = document.getElementById('pageStatus');
   let page = first;
-  let request = 0;
+  let retry = null;
+  let book = null;
 
-  const preload = (n) => {
-    if (n >= 1 && n <= b.scans) new Image().src = pageUrl(b, n);
-  };
   const browserZoomed = () => (visualViewport?.scale || 1) > 1.05;
+  const editing = () => document.activeElement === input;
 
-  function paint() {
-    scan.alt = `Страница ${page} из ${b.scans}`;
-    count.textContent = `${page} из ${b.scans}`;
-    note.textContent = page === b.scans ? LAST_NOTE : FRAGMENT_NOTE;
-    prev?.setAttribute('aria-disabled', page === 1);
-    next?.setAttribute('aria-disabled', page === b.scans);
-    list?.querySelectorAll('button').forEach((button) => {
-      const current = Number(button.dataset.page) === page;
-      if (current) {
-        button.setAttribute('aria-current', 'page');
-        list.scrollTo({ left: button.offsetLeft - (list.clientWidth - button.offsetWidth) / 2 });
-      } else {
-        button.removeAttribute('aria-current');
-      }
-    });
-    preload(page + 1);
-    preload(page - 1);
+  function paint(pages) {
+    const shown = [pages.left, pages.right].filter(Boolean);
+    note.textContent = shown.includes(b.scans) ? LAST_NOTE : FRAGMENT_NOTE;
+    if (!form) return;
+    if (!editing()) input.value = page;
+    input.placeholder = page;
+    status.textContent = `${shown.length > 1 ? `Страницы ${shown.join(' и ')}` : `Страница ${shown[0]}`} из ${b.scans}`;
+    prev.setAttribute('aria-disabled', book.atStart());
+    next.setAttribute('aria-disabled', book.atEnd());
   }
 
   function saveAddress() {
@@ -100,99 +91,113 @@ function bind(b, first, signal) {
     sheet.hidden = on;
   }
 
-  /* Новая страница подменяет старую только после загрузки, быстрое листание не собирает очередь */
-  function load() {
-    request += 1;
-    const id = request;
-    const url = pageUrl(b, page);
-    const slow = setTimeout(() => sheet.classList.add('busy'), 300);
-    const next = new Image();
-    const done = () => {
-      clearTimeout(slow);
-      sheet.classList.remove('busy');
-    };
-    next.onload = () => {
-      if (id !== request || signal.aborted) return;
-      done();
+  book = createFlipbook({
+    root: document.getElementById('flipbook'),
+    total: b.scans,
+    start: first,
+    coverColor: b.color || '#4a4038',
+    url: (n) => pageUrl(b, n),
+    label: (n) => `Страница ${n} из ${b.scans}`,
+    signal,
+    onChange(firstShown, pages) {
+      const moved = firstShown !== page;
+      page = firstShown;
       setFailed(false);
-      scan.src = url;
-      if (!reducedMotion()) scan.animate({ opacity: [0.4, 1] }, { duration: 200, easing: 'ease-out' });
-    };
-    next.onerror = () => {
-      if (id !== request || signal.aborted) return;
-      done();
+      paint(pages);
+      if (moved) saveAddress();
+    },
+    onError(again) {
+      retry = again;
       setFailed(true);
-    };
-    next.src = url;
-  }
+    },
+  });
 
-  function go(target) {
-    if (target < 1 || target > b.scans || target === page) return;
-    page = target;
-    paint();
-    saveAddress();
-    window.scrollTo(0, 0);
-    sheet.scrollLeft = 0;
-    load();
-  }
-
-  /* Страница растёт от точки нажатия, поэтому нужная строка остаётся на экране */
-  function setLarge(on, pointY = null) {
+  function setLarge(on) {
     if (sheet.classList.contains('large') === on) return;
-    const before = scan.getBoundingClientRect();
     sheet.classList.toggle('large', on);
+    book.setLarge(on);
     zoom.textContent = on ? 'Целиком' : 'Крупнее';
     zoom.setAttribute('aria-pressed', on);
-    if (on && pointY !== null) {
-      const after = scan.getBoundingClientRect();
-      window.scrollBy(0, (pointY - before.top) * (after.height / before.height - 1));
-    } else if (!on) {
-      window.scrollTo(0, 0);
-    }
+    if (!on) window.scrollTo(0, 0);
   }
 
-  prev?.addEventListener('click', () => go(page - 1));
-  next?.addEventListener('click', () => go(page + 1));
-  list?.addEventListener('click', (e) => {
-    const button = e.target.closest('[data-page]');
-    if (button) go(Number(button.dataset.page));
+  const setWrong = (on) => {
+    goLabel.classList.toggle('wrong', on);
+    input.setAttribute('aria-invalid', on);
+  };
+  const finishJump = () => {
+    input.value = '';
+    input.blur();
+  };
+
+  /* Поле начинается пустым: текущий номер виден подсказкой, ввод не надо стирать */
+  input?.addEventListener('focus', () => {
+    input.value = '';
+    form.classList.add('jumping');
   });
+  input?.addEventListener('blur', () => {
+    input.value = page;
+    setWrong(false);
+    form.classList.remove('jumping');
+  });
+  input?.addEventListener('input', () => {
+    input.value = input.value.replace(/\D/g, '');
+    setWrong(false);
+  });
+  input?.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      finishJump();
+    }
+  });
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (!input.value) {
+      finishJump();
+      return;
+    }
+    const target = Number(input.value);
+    if (target < 1 || target > b.scans) {
+      setWrong(true);
+      status.textContent = `Такой страницы нет, в скане страниц: ${b.scans}`;
+      input.select();
+      return;
+    }
+    finishJump();
+    book.go(target);
+  });
+  /* Иначе кнопка «Перейти» спрячется вместе с потерей фокуса раньше, чем сработает нажатие */
+  form?.querySelector('.reader-submit').addEventListener('pointerdown', (e) => e.preventDefault());
+
+  prev?.addEventListener('click', () => book.previous());
+  next?.addEventListener('click', () => book.next());
   zoom.addEventListener('click', () => setLarge(!sheet.classList.contains('large')));
-  document.getElementById('scanRetry').addEventListener('click', load);
-  scan.addEventListener('error', () => setFailed(true));
-  scan.addEventListener('click', (e) => {
-    if (!swiped) setLarge(!sheet.classList.contains('large'), e.clientY);
+  document.getElementById('scanRetry').addEventListener('click', () => {
+    setFailed(false);
+    retry?.();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (e.key === 'ArrowRight') go(page + 1);
-    if (e.key === 'ArrowLeft') go(page - 1);
+    if (e.ctrlKey || e.metaKey || e.altKey || e.target === input) return;
+    if (e.key === 'ArrowRight') book.next();
+    if (e.key === 'ArrowLeft') book.previous();
     if (e.key === '+' || e.key === '=') setLarge(true);
     if (e.key === '-' || e.key === 'Escape') setLarge(false);
+    /* Цифра с клавиатуры сразу начинает ввод номера: 20 и Enter работают откуда угодно */
+    if (input && /^\d$/.test(e.key)) input.focus();
   }, { signal });
 
-  /* При масштабе двумя пальцами страницу двигают во все стороны, свайп выключается */
-  visualViewport?.addEventListener('resize', () => sheet.classList.toggle('pinched', browserZoomed()), { signal });
+  /* Панель с полем поднимается над экранной клавиатурой */
+  const liftControls = () => {
+    if (!form || browserZoomed()) return;
+    const covered = innerHeight - visualViewport.height - visualViewport.offsetTop;
+    form.style.setProperty('--keyboard', `${covered > 80 ? Math.round(covered) : 0}px`);
+  };
+  const onViewport = () => {
+    sheet.classList.toggle('pinched', browserZoomed());
+    liftControls();
+  };
+  visualViewport?.addEventListener('resize', onViewport, { signal });
+  visualViewport?.addEventListener('scroll', liftControls, { signal });
 
-  /* Свайп листает, вертикальная прокрутка и масштаб двумя пальцами остаются браузеру */
-  let startX = null;
-  let startY = 0;
-  let swiped = false;
-  scan.addEventListener('pointerdown', (e) => {
-    swiped = false;
-    startX = e.pointerType === 'touch' && e.isPrimary ? e.clientX : null;
-    startY = e.clientY;
-  });
-  scan.addEventListener('pointercancel', () => { startX = null; });
-  scan.addEventListener('pointerup', (e) => {
-    if (startX === null || browserZoomed() || sheet.classList.contains('large')) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    startX = null;
-    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
-    swiped = true;
-    go(page + (dx < 0 ? 1 : -1));
-  });
-
-  paint();
+  paint(book.pages());
 }
