@@ -4,10 +4,12 @@ import { ACCESS, BOOKS, COURSES, SECTIONS } from './data.js';
 const byId = Object.assign(Object.create(null), Object.fromEntries(BOOKS.map((b) => [b.id, b])));
 
 /* Поиск: слова в любом порядке, окончания и одна опечатка */
-const norm = (s) => String(s).toLowerCase().replace(/ё/g, 'е');
+/* Узбекские буквы приравнены к русским: на русской клавиатуре их нет */
+const UZBEK = { ў: 'у', қ: 'к', ғ: 'г', ҳ: 'х' };
+const norm = (s) => String(s).toLowerCase().replace(/ё/g, 'е').replace(/[ўқғҳ]/g, (c) => UZBEK[c]);
 const words = (s) => norm(s).replace(/[.,;:!?«»"()/]/g, ' ').split(/\s+/).filter(Boolean);
 const searchIndex = new Map(BOOKS.map((b) => [b.id, words(
-  `${b.title} ${b.author} ${b.fullAuthor} ${b.year} ${SECTIONS[b.section]} ${b.about} ${b.code}`,
+  `${b.title} ${b.author} ${b.fullAuthor} ${b.year ?? ''} ${SECTIONS[b.section]} ${b.about} ${b.code}`,
 ).flatMap((word) => [word, ...word.split('-')])]));
 
 function oneEditAway(a, b) {
@@ -36,8 +38,8 @@ function matches(b, query) {
 
 export const SORTS = {
   title: { label: 'по алфавиту', compare: (a, b) => a.title.localeCompare(b.title, 'ru') },
-  new: { label: 'новые', compare: (a, b) => b.year - a.year },
-  old: { label: 'старые', compare: (a, b) => a.year - b.year },
+  new: { label: 'новые', compare: (a, b) => (b.year ?? -Infinity) - (a.year ?? -Infinity) || 0 },
+  old: { label: 'старые', compare: (a, b) => (a.year ?? Infinity) - (b.year ?? Infinity) || 0 },
 };
 
 export const library = {

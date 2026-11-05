@@ -11,7 +11,7 @@ export function readerScreen({ id }) {
     ? `<div class="reader-body" id="readerBody">${esc(b.text)}</div>
        <p class="reader-note">В прототипе показан только отрывок.</p>`
     : `<div class="reader-body" id="readerBody">${esc(b.about)}</div>
-       <p class="reader-note">Полный текст появится после оцифровки. Пока книгу можно получить по шифру ${esc(b.code)}.</p>`;
+       <p class="reader-note">Полный текст появится после оцифровки.${b.code ? ` Пока книгу можно получить по шифру ${esc(b.code)}.` : ''}</p>`;
   return {
     title: b.title,
     bind,

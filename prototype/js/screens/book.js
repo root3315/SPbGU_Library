@@ -11,13 +11,15 @@ const HOW_TO_GET = {
   paper: 'Цифровой копии пока нет. Бумажную книгу выдают по шифру.',
 };
 
+const NO_CODE = 'Цифровой копии пока нет. О бумажном экземпляре спросите библиотекаря.';
+
 const saveLabel = (id) => (store.shelf().includes(id) ? 'Убрать с полки' : 'На мою полку');
 
 export function bookScreen({ id }) {
   const b = library.get(id);
   if (!b) return missingScreen();
   const near = library.related(b, 10);
-  const code = b.access === 'online' ? '' : `<div class="book-code">
+  const code = b.access === 'online' || !b.code ? '' : `<div class="book-code">
       <p><span>Шифр</span> <b>${esc(b.code)}</b></p>
       <button type="button" class="text-btn" id="copyCode">Скопировать</button>
       <small>Номер книги в фонде, по нему её находят.</small>
@@ -35,11 +37,11 @@ export function bookScreen({ id }) {
           <div class="book-main">
             <p class="book-author">${esc(b.author)}</p>
             <h1>${hyphenate(esc(b.title))}</h1>
-            <p class="book-meta">${b.year} год, ${countPages(b.pages)}</p>
+            <p class="book-meta">${[b.year && `${b.year} год`, b.pages && countPages(b.pages)].filter(Boolean).join(', ')}</p>
             <p class="book-about">${esc(b.about)}</p>
           </div>
           <div class="book-side">
-            <p class="book-how">${HOW_TO_GET[b.access]}</p>
+            <p class="book-how">${b.code || b.access === 'online' ? HOW_TO_GET[b.access] : NO_CODE}</p>
             ${code}
             <div class="book-actions">
               <a class="btn btn-main" href="#/read/${encodeURIComponent(b.id)}">Читать</a>
@@ -47,8 +49,8 @@ export function bookScreen({ id }) {
             </div>
           </div>
           <dl class="book-facts">
-            <div><dt>Год</dt><dd>${b.year}</dd></div>
-            <div><dt>Страниц</dt><dd>${b.pages}</dd></div>
+            ${b.year ? `<div><dt>Год</dt><dd>${b.year}</dd></div>` : ''}
+            ${b.pages ? `<div><dt>Страниц</dt><dd>${b.pages}</dd></div>` : ''}
             <div><dt>Раздел</dt><dd>${esc(library.sections[b.section])}</dd></div>
           </dl>
         </article>

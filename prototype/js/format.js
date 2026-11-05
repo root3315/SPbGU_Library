@@ -7,9 +7,9 @@ export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
 export const hashCode = (s) => [...String(s)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 /* Мягкие переносы в длинных словах: встроенного словаря для русского в браузере может не быть */
-export const hyphenate = (text) => text.replace(/[а-яё]{10,}/gi, (word) => word.replace(
-  /([аеёиоуыэюя][бвгджзйклмнпрстфхцчшщ]?)(?=[бвгджзйклмнпрстфхцчшщ][аеёиоуыэюя][а-яё])/gi,
-  '$1\u00AD',
+export const hyphenate = (text, min = 10) => text.replace(new RegExp(`[a-zа-яёўқғҳ]{${min},}`, 'gi'), (word) => word.replace(
+  /[aeiouаеёиоуўыэюя][bcdfghjklmnpqrstvwxyzбвгғджзйклмнпқрстфхҳцчшщ]?(?=[bcdfghjklmnpqrstvwxyzбвгғджзйклмнпқрстфхҳцчшщ][aeiouаеёиоуўыэюя][a-zа-яёўқғҳ])/gi,
+  (part, offset) => (offset === 0 && part.length === 1 ? part : `${part}\u00AD`),
 ));
 
 const plural = (n, one, few, many) => {

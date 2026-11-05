@@ -1,4 +1,6 @@
 // Демо-каталог для прототипа. Шифры, число страниц и доступность условные.
+import { EDITIONS } from './editions.js';
+
 export const SECTIONS = {
   lit: 'Литература',
   nat: 'Естественные науки',
@@ -104,6 +106,9 @@ const FULL_AUTHORS = {
   'А. П. Чехов': 'Антон Павлович Чехов',
 };
 
-export const BOOKS = RAW_BOOKS.map((b) => ({ ...b, fullAuthor: FULL_AUTHORS[b.author] || b.author }));
+export const BOOKS = [...RAW_BOOKS, ...EDITIONS].map((b) => ({
+  ...b,
+  fullAuthor: b.fullAuthor || FULL_AUTHORS[b.author] || b.author,
+}));
 
 export const COURSES = ['chem', 'kluch', 'cheb', 'martens', 'petr', 'pavlov', 'lyap', 'bio', 'tugan', 'dok'];

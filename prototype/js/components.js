@@ -21,7 +21,7 @@ export function cover(b, { named = false } = {}) {
     ? `<span class="cover cover-scan"><img src="${esc(b.image)}" alt="" loading="lazy" decoding="async"></span>`
     : `<span class="cover" data-size="${size}" data-layout="${(h >>> 4) % 3}" style="--t:${textColor}">
         <span class="cover-author">${esc(b.author)}</span>
-        <span class="cover-title">${esc(b.title)}</span>
+        <span class="cover-title">${hyphenate(esc(b.title), 14)}</span>
       </span>`;
   return `<span class="volume-box"${name} aria-hidden="true">
     <span class="volume" style="--depth:${depth};--c:${esc(color)}">
@@ -38,7 +38,7 @@ export function tile(b) {
     ${cover(b)}
     <span class="tile-title">${hyphenate(esc(b.title))}</span>
     <span class="tile-author">${esc(b.author)}</span>
-    <span class="tile-pages">${countPages(b.pages)}</span>
+    ${b.pages ? `<span class="tile-pages">${countPages(b.pages)}</span>` : ''}
   </a></li>`;
 }
 
@@ -47,7 +47,7 @@ export function resultItem(b) {
     ${cover(b)}
     <span>
       <span class="result-title">${esc(b.title)}</span>
-      <span class="result-author">${esc(b.author)}, ${b.year}</span>
+      <span class="result-author">${esc(b.author)}${b.year ? `, ${b.year}` : ''}</span>
     </span>
   </a></li>`;
 }

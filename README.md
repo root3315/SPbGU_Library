@@ -23,6 +23,7 @@ prototype/
     router.js       адрес, смена экранов, прокрутка, фокус
     nav.js          состояние навигации
     library.js      единственный доступ к данным книг
+    editions.js     издания из сканов
     data.js         демо-данные
     store.js        localStorage
     format.js       помощники без состояния
