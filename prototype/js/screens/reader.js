@@ -17,6 +17,9 @@ export function readerScreen({ id, params, signal }) {
   const page = Math.min(b.scans, Math.max(1, wanted || 1));
   const turn = (name, label) => (b.scans > 1
     ? `<button type="button" class="reader-turn" id="${name}" aria-label="${label}">${arrow(name === 'pagePrev' ? 'prev' : 'next')}</button>` : '');
+  const numbers = b.scans > 1 ? `<nav class="reader-pages" id="pageList" aria-label="Выбор страницы">${
+    Array.from({ length: b.scans }, (_, i) => `<button type="button" data-page="${i + 1}" aria-label="Страница ${i + 1}">${i + 1}</button>`).join('')
+  }</nav>` : '';
   return {
     title: b.title,
     bind: () => bind(b, page, signal),
@@ -35,11 +38,14 @@ export function readerScreen({ id, params, signal }) {
           <p>Страница не загрузилась.</p>
           <button type="button" class="btn btn-quiet" id="scanRetry">Повторить</button>
         </div>
-        <div class="reader-pager">
-          ${turn('pagePrev', 'Предыдущая страница')}
-          <p class="reader-count" id="pageCount" role="status"></p>
-          ${turn('pageNext', 'Следующая страница')}
-          <button type="button" class="btn btn-quiet reader-zoom" id="pageZoom" aria-pressed="false">Крупнее</button>
+        <div class="reader-controls">
+          ${numbers}
+          <div class="reader-pager">
+            ${turn('pagePrev', 'Предыдущая страница')}
+            <p class="reader-count" id="pageCount" role="status"></p>
+            ${turn('pageNext', 'Следующая страница')}
+            <button type="button" class="btn btn-quiet reader-zoom" id="pageZoom" aria-pressed="false">Крупнее</button>
+          </div>
         </div>
       </article>
     </div>`,
@@ -55,6 +61,7 @@ function bind(b, first, signal) {
   const note = document.getElementById('pageNote');
   const zoom = document.getElementById('pageZoom');
   const failed = document.getElementById('scanFailed');
+  const list = document.getElementById('pageList');
   let page = first;
   let request = 0;
 
@@ -69,6 +76,15 @@ function bind(b, first, signal) {
     note.textContent = page === b.scans ? LAST_NOTE : FRAGMENT_NOTE;
     prev?.setAttribute('aria-disabled', page === 1);
     next?.setAttribute('aria-disabled', page === b.scans);
+    list?.querySelectorAll('button').forEach((button) => {
+      const current = Number(button.dataset.page) === page;
+      if (current) {
+        button.setAttribute('aria-current', 'page');
+        list.scrollTo({ left: button.offsetLeft - (list.clientWidth - button.offsetWidth) / 2 });
+      } else {
+        button.removeAttribute('aria-current');
+      }
+    });
     preload(page + 1);
     preload(page - 1);
   }
@@ -137,6 +153,10 @@ function bind(b, first, signal) {
 
   prev?.addEventListener('click', () => go(page - 1));
   next?.addEventListener('click', () => go(page + 1));
+  list?.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-page]');
+    if (button) go(Number(button.dataset.page));
+  });
   zoom.addEventListener('click', () => setLarge(!sheet.classList.contains('large')));
   document.getElementById('scanRetry').addEventListener('click', load);
   scan.addEventListener('error', () => setFailed(true));

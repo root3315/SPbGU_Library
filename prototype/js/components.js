@@ -1,5 +1,5 @@
 /* Общие куски разметки */
-import { countPages, esc, hashCode, hyphenate } from './format.js';
+import { esc, hashCode, hyphenate, pagesText } from './format.js';
 import { library } from './library.js';
 
 /* Издание без снимка обложки: цветной переплёт и светлый ярлык, у узбекских изданий внизу орнамент */
@@ -58,7 +58,7 @@ export function tile(b) {
     ${cover(b)}
     <span class="tile-title" lang="${esc(b.lang)}">${hyphenate(esc(b.title))}</span>
     <span class="tile-author">${esc(b.author)}${b.year ? `, ${b.year}` : ''}</span>
-    ${b.pages ? `<span class="tile-pages">${countPages(b.pages)}</span>` : ''}
+    <span class="tile-pages">${pagesText(b)}</span>
   </a></li>`;
 }
 

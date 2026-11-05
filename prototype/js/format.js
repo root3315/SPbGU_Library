@@ -12,6 +12,11 @@ export const hyphenate = (text) => text.replace(/[a-zа-яёўқғҳ]{10,}/gi, (
   (part, offset) => (offset === 0 && part.length === 1 ? part : `${part}\u00AD`),
 ));
 
+export const pagesText = (b) => {
+  if (!b.pages) return 'объём уточняется';
+  return b.pagesApprox ? `от ${b.pages} стр.` : countPages(b.pages);
+};
+
 const plural = (n, one, few, many) => {
   const a = n % 100; const b = n % 10;
   if (a > 10 && a < 20) return many;

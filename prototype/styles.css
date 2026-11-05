@@ -379,7 +379,7 @@ input[type='search']::-webkit-search-cancel-button {
 .tile-title { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .tile-author { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .tile-author, .tile-pages { margin-top: 2px; color: var(--ink-2); font-size: 14px; }
-.tile-pages { display: none; font-variant-numeric: tabular-nums; }
+.tile-pages { display: block; font-variant-numeric: tabular-nums; }
 .tile:focus-visible .volume, .tile:active .volume { transform: var(--pose); }
 @media (hover: hover) {
   .tile:hover { z-index: 2; }
@@ -390,7 +390,6 @@ input[type='search']::-webkit-search-cancel-button {
 }
 /* Без наведения толщину не увидеть, поэтому она написана словами, а на странице книги книга уже повёрнута */
 @media (hover: none) {
-  .tile-pages { display: block; }
   .book-cover .volume { transform: var(--pose); }
 }
 
@@ -493,7 +492,7 @@ legend { margin-bottom: 6px; padding: 0; font-weight: 600; }
 body:has(.reader) .top { position: static; view-transition-name: none; }
 .reader { width: min(var(--page), 100%); margin: 0 auto; padding: 0 var(--gutter) 28px; }
 .reader-bar { display: flex; align-items: center; gap: 16px; min-height: 44px; margin-bottom: 4px; }
-.reader-bar .back { flex: none; margin: 0; }
+.reader-bar .back { flex: none; min-height: 0; margin: 0; padding-block: 12px; font: 500 15px/1.3 var(--body); }
 .reader-name { overflow: hidden; min-width: 0; color: var(--ink-2); font: 500 15px/1.3 var(--body); text-overflow: ellipsis; white-space: nowrap; }
 .reader-page { display: grid; justify-items: center; gap: 12px; }
 .reader-sheet { overflow-x: auto; max-width: 100%; margin: 0; }
@@ -502,7 +501,13 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
 .reader-sheet.busy .reader-scan { opacity: .45; }
 .reader-sheet.pinched .reader-scan, .reader-sheet.large .reader-scan { touch-action: pan-x pan-y pinch-zoom; }
 .reader-sheet.large .reader-scan { width: 1000px; max-width: none; height: auto; cursor: zoom-out; }
-.reader-sheet.large ~ .reader-pager { position: sticky; bottom: 8px; padding: 6px; border-radius: var(--r-s); background: var(--card); box-shadow: var(--shadow); }
+.reader-controls { display: grid; justify-items: center; gap: 10px; max-width: 100%; }
+.reader-sheet.large ~ .reader-controls { position: sticky; bottom: 8px; padding: 8px; border-radius: var(--r-s); background: var(--card); box-shadow: var(--shadow); }
+.reader-pages { position: relative; display: flex; gap: 4px; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.reader-pages::-webkit-scrollbar { display: none; }
+.reader-pages button { flex: none; min-width: 40px; height: 40px; border: 0; border-radius: var(--r-s); background: none; color: var(--ink-2); font-variant-numeric: tabular-nums; transition: color var(--fast) ease, background var(--fast) ease; }
+.reader-pages button:hover { background: var(--flat); color: var(--ink); }
+.reader-pages button[aria-current='page'] { background: var(--flat); color: var(--ink); font-weight: 600; }
 .reader-pager { display: flex; align-items: center; justify-content: center; gap: 10px; }
 .reader-turn { display: grid; place-items: center; width: 48px; height: 48px; border: 0; border-radius: var(--r-s); background: var(--flat); color: var(--ink); transition: background var(--fast) ease, opacity var(--fast) ease; }
 .reader-turn:hover:not([aria-disabled='true']) { background: var(--flat-hover); }
@@ -531,6 +536,10 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
 }
 @media (min-width: 861px) {
   .filters { max-height: calc(100vh - var(--top-h) - 24px); overflow-y: auto; scrollbar-width: thin; }
+}
+@media (min-width: 861px) {
+  .reader-controls { display: flex; align-items: center; gap: 14px; }
+  .reader-count { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 }
 @media (min-width: 1200px) {
   .section-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
@@ -674,12 +683,14 @@ body:has(.reader) .top { position: static; view-transition-name: none; }
   .tabbar svg { width: 24px; height: 24px; fill: none; stroke: currentcolor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: stroke-width var(--fast) ease; }
   body:has(.reader) { padding-bottom: 0; }
   body:has(.reader) .tabbar, body:has(.reader) .foot { display: none; }
-  .reader { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .reader { padding-bottom: calc(132px + env(safe-area-inset-bottom)); }
   .reader-sheet { width: 100%; }
   .reader-scan { width: 100%; height: auto; }
   .reader-sheet.large { width: 100vw; margin-inline: calc(-1 * var(--gutter)); }
   .reader-sheet.large .reader-scan { width: 200%; }
-  .reader-pager, .reader-sheet.large ~ .reader-pager { position: fixed; z-index: 5; inset: auto 0 0; justify-content: space-between; padding: 8px var(--gutter) calc(8px + env(safe-area-inset-bottom)); border-radius: 0; background: var(--card); box-shadow: 0 -10px 30px -22px rgb(var(--shade) / 40%); }
+  .reader-controls, .reader-sheet.large ~ .reader-controls { position: fixed; z-index: 5; inset: auto 0 0; gap: 6px; justify-items: stretch; max-width: none; padding: 6px var(--gutter) calc(8px + env(safe-area-inset-bottom)); border-radius: 0; background: var(--card); box-shadow: 0 -10px 30px -22px rgb(var(--shade) / 40%); }
+  .reader-pager { justify-content: space-between; }
+  .reader-pages { margin-inline: calc(-1 * var(--gutter)); padding-inline: var(--gutter); max-width: none; }
 
   .hero { gap: 20px; padding-top: 0; padding-bottom: 0; }
   .hero h1 { margin-bottom: 14px; font-size: clamp(30px, 8.6vw, 36px); }

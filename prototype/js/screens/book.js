@@ -1,5 +1,5 @@
 import { cover, tile } from '../components.js';
-import { countPages, esc, hyphenate } from '../format.js';
+import { esc, hyphenate, pagesText } from '../format.js';
 import { library } from '../library.js';
 import { nav } from '../nav.js';
 import { store, updateShelfCount } from '../store.js';
@@ -24,7 +24,7 @@ export function bookScreen({ id }) {
           <div class="book-main">
             <p class="book-author">${esc(b.author)}</p>
             <h1 lang="${esc(b.lang)}">${hyphenate(esc(b.title))}</h1>
-            <p class="book-meta">${[b.year && `${b.year} год`, b.pages && countPages(b.pages), library.languages[b.lang].toLowerCase()].filter(Boolean).join(', ')}</p>
+            <p class="book-meta">${[b.year && `${b.year} год`, pagesText(b), library.languages[b.lang].toLowerCase()].filter(Boolean).join(', ')}</p>
             <p class="book-about">${esc(b.about)}</p>
           </div>
           <div class="book-side">
@@ -36,7 +36,7 @@ export function bookScreen({ id }) {
           </div>
           <dl class="book-facts">
             ${b.year ? `<div><dt>Год</dt><dd>${b.year}</dd></div>` : ''}
-            ${b.pages ? `<div><dt>Страниц</dt><dd>${b.pages}</dd></div>` : ''}
+            <div><dt>Объём</dt><dd>${pagesText(b)}</dd></div>
             <div><dt>Раздел</dt><dd>${esc(library.sections[b.section])}</dd></div>
             <div><dt>Язык</dt><dd>${esc(library.languages[b.lang])}</dd></div>
           </dl>
