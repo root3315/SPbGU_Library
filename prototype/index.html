@@ -12,7 +12,33 @@
       if (JSON.parse(localStorage.getItem('theme')) === 'night') document.documentElement.classList.add('night');
     } catch { /* приватный режим */ }
   </script>
-  <style>html.night { background: #161614; color-scheme: dark; }</style>
+  <style>
+    html.night { background: #161614; color-scheme: dark; }
+    /* Экран загрузки стоит здесь, чтобы появиться раньше внешних стилей */
+    .splash { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: #62241b; opacity: 1; transition: opacity .45s ease, visibility .45s; }
+    .splash.done { opacity: 0; visibility: hidden; }
+    .no-splash .splash { display: none; }
+    .splash-mark { position: relative; display: grid; place-items: center; width: min(46vmin, 220px); aspect-ratio: 1; }
+    .splash-mark svg { width: 58%; fill: none; stroke: #ececec; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .splash-mark::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: conic-gradient(from 0deg, transparent 12%, #ececec);
+      -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+      mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+      animation: splash-turn 1.3s linear infinite;
+    }
+    @keyframes splash-turn { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .splash-mark::after { animation: none; } }
+  </style>
+  <script>
+    /* Заставка показывается один раз за визит */
+    try {
+      if (sessionStorage.getItem('splash')) document.documentElement.classList.add('no-splash');
+    } catch { /* приватный режим */ }
+  </script>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,6 +46,11 @@
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splash-mark">
+      <svg viewBox="0 0 48 48"><path d="M24 13C19.500 9.500 13.500 9 7 10v27c6.500-1 12.500-.5 17 3 4.500-3.500 10.500-4 17-3V10c-6.500-1-12.500-.5-17 3zM24 13v27"/></svg>
+    </div>
+  </div>
   <a class="skip" href="#view">К содержанию</a>
   <header class="top">
     <a class="brand" href="#/" aria-label="Библиотека СПбГУ, на главную">Библиотека <span>СПбГУ</span></a>

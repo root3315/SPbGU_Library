@@ -32,6 +32,11 @@ export const store = {
   },
   setFontSize: (size) => write('reader', { size }),
   setTheme: (theme) => write('theme', theme),
+  markSplashShown() {
+    try {
+      sessionStorage.setItem('splash', '1');
+    } catch { /* приватный режим */ }
+  },
 };
 
 export function updateShelfCount() {
