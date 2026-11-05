@@ -69,6 +69,7 @@ document.addEventListener('keydown', (e) => {
 /* Заставка держится недолго и уходит, даже если экран не отрисовался */
 function hideSplash() {
   const splash = document.getElementById('splash');
+  if (!splash) return;
   setTimeout(() => {
     splash.classList.add('done');
     root.classList.add('first');

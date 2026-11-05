@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Электронная библиотека СПбГУ</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <meta name="description" content="Прототип интерфейса электронной библиотеки">
+  <meta name="description" content="Каталог изданий библиотеки СПбГУ: поиск, обложки, титулы и оглавления">
   <script>
     /* Тема ставится до первой отрисовки, иначе ночью вспыхнет светлый экран */
     try {
@@ -38,7 +38,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=Manrope:wght@800&family=PT+Serif:wght@400;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-  <script type="module" src="js/main.js" onerror="document.getElementById('splash').remove();document.getElementById('view').textContent='Сайт не загрузился. Обновите страницу.'"></script>
+  <script type="module" src="js/main.js" onerror="document.getElementById('splash')?.remove();document.getElementById('view').textContent='Сайт не загрузился. Обновите страницу.'"></script>
 </head>
 <body>
   <div class="splash" id="splash" aria-hidden="true">
@@ -84,7 +84,7 @@
   </nav>
 
   <footer class="foot">
-    <p>Прототип интерфейса, не официальный сайт университета. Шифры, доступность и подборки условные.</p>
+    <p>Электронная библиотека СПбГУ. Каталог пополняется.</p>
   </footer>
 </body>
 </html>

@@ -27,6 +27,7 @@ export function homeScreen() {
             <div class="results" id="heroResults"></div>
             <p class="sr" id="heroStatus" role="status"></p>
           </div>
+          <p class="hero-note">В каталоге ${countBooks(library.total)}. Пока доступны титулы и оглавления.</p>
           <p class="often">Часто ищут:
             <button type="button" data-try="Бегалов">Бегалов</button>,
             <button type="button" data-try="пенсия">пенсия</button>,
@@ -35,7 +36,7 @@ export function homeScreen() {
         </div>
         <div class="hero-side">
           <h2>Новые издания</h2>
-          <ul class="tiles tiles-3">${library.newest(3).map(tile).join('')}</ul>
+          <ul class="tiles tiles-3">${library.featured(3).map(tile).join('')}</ul>
         </div>
       </section>
 

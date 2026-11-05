@@ -23,14 +23,14 @@ export function bookScreen({ id }) {
         <article class="book-card">
           <div class="book-main">
             <p class="book-author">${esc(b.author)}</p>
-            <h1>${hyphenate(esc(b.title))}</h1>
-            <p class="book-meta">${[b.year && `${b.year} год`, b.pages && countPages(b.pages)].filter(Boolean).join(', ')}</p>
+            <h1 lang="${esc(b.lang)}">${hyphenate(esc(b.title))}</h1>
+            <p class="book-meta">${[b.year && `${b.year} год`, b.pages && countPages(b.pages), library.languages[b.lang].toLowerCase()].filter(Boolean).join(', ')}</p>
             <p class="book-about">${esc(b.about)}</p>
           </div>
           <div class="book-side">
-            <p class="book-how">Цифровой копии пока нет. О бумажном экземпляре спросите библиотекаря.</p>
+            <p class="book-how">Полного текста пока нет. ${b.scans > 1 ? `Из скана доступно страниц: ${b.scans}.` : 'Из скана доступен титульный лист.'}</p>
             <div class="book-actions">
-              <a class="btn btn-main" href="#/read/${encodeURIComponent(b.id)}">Смотреть страницы</a>
+              <a class="btn btn-main" href="#/read/${encodeURIComponent(b.id)}">${b.scans > 1 ? 'Смотреть страницы' : 'Смотреть титул'}</a>
               <button type="button" class="btn btn-quiet" id="saveBook">${saveLabel(b.id)}</button>
             </div>
           </div>

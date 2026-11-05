@@ -2,58 +2,33 @@
 import { countPages, esc, hashCode, hyphenate } from './format.js';
 import { library } from './library.js';
 
-/* Издание без снимка обложки получает свою: цвет по разделу, рисунок по языку */
-const SECTION_COLORS = {
-  law: ['#6f1d24', '#8a2a22', '#4b1f2e'],
-  soc: ['#1f3a5c', '#22483f', '#3a3556'],
-  tech: ['#124a52', '#1e4470', '#2b3b46'],
-  hist: ['#6a4520', '#5b2f22'],
-  lit: ['#3f2f55', '#7a2b3a'],
-};
-const ACCENT = '#e9d8b4';
+/* Издание без снимка обложки: цветной переплёт и светлый ярлык, у узбекских изданий внизу орнамент */
+const BINDINGS = ['#6f2a2a', '#25405c', '#2f4f45', '#4a4038', '#7a6a4f', '#8c8578', '#54405c', '#7a3a2c'];
 
-const svg = (inner) => `<svg class="cover-art" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">${inner}</svg>`;
+/* Плитка 40 и полоса 80: ровно две строки целых звёзд на всю ширину */
+const ORNAMENT = `<svg class="cover-art" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <defs><pattern id="cover-ornament" width="40" height="40" patternUnits="userSpaceOnUse" y="220">
+    <path d="M8.3 8.3h23.4v23.4H8.3zM20 3.5 36.5 20 20 36.5 3.5 20z" fill="none" stroke="#f3ecdd" stroke-width="1.1" opacity=".42"/>
+  </pattern></defs>
+  <rect y="220" width="200" height="80" fill="url(#cover-ornament)"/>
+</svg>`;
 
-/* Узбекские издания: орнамент из звёзд или кругов */
-function ornamentArt(h) {
-  const id = `ornament-${h % 2}`;
-  const tile = h % 2
-    ? '<path d="M8.3 8.3h23.4v23.4H8.3zM20 3.5 36.5 20 20 36.5 3.5 20z"/>'
-    : '<circle cx="20" cy="20" r="14"/><circle cx="0" cy="0" r="14"/><circle cx="40" cy="0" r="14"/><circle cx="0" cy="40" r="14"/><circle cx="40" cy="40" r="14"/>';
-  return svg(`<defs><pattern id="${id}" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="scale(.9)">
-    <g fill="none" stroke="${ACCENT}" stroke-width="1.1" opacity=".5">${tile}</g></pattern></defs>
-    <rect width="200" height="300" fill="url(#${id})"/>`);
+/* На обложке короткое название: подзаголовок и хвост остаются в подписи */
+function shortTitle(title) {
+  const head = title.split(':')[0].trim();
+  const parts = head.split(/\s+/);
+  return parts.length > 7 ? `${parts.slice(0, 7).join(' ')}…` : head;
 }
 
-/* Большой круг в нижнем углу, положение зависит от издания */
-function arcArt(h) {
-  const x = 110 + (h >>> 2) % 80;
-  const y = 205 + (h >>> 6) % 45;
-  const r = 86 + (h >>> 9) % 40;
-  return svg(`<circle cx="${x}" cy="${y}" r="${r}" fill="${ACCENT}" opacity=".14"/>
-    <circle cx="${x}" cy="${y}" r="${r + 16}" fill="none" stroke="${ACCENT}" stroke-width="1.2" opacity=".5"/>`);
-}
-
-/* Полосы разной ширины над светлой табличкой с названием */
-function stripesArt(h) {
-  let x = 16;
-  let bars = '';
-  for (let i = 0; x < 200; i += 1) {
-    const width = 6 + ((h >>> (i * 3)) & 7) * 3;
-    bars += `<rect x="${x}" width="${width}" height="300" fill="${ACCENT}" opacity="${i % 2 ? '.12' : '.26'}"/>`;
-    x += width + 8;
-  }
-  return svg(bars);
-}
-
-function generatedFace(b, h) {
-  const size = b.title.length > 72 ? 'xxl' : b.title.length > 42 ? 'xl' : b.title.length > 22 ? 'l' : 'm';
-  const layout = b.lang === 'uz' ? 'ornament' : (h >>> 4) % 2 ? 'arc' : 'plate';
-  const art = { ornament: ornamentArt, arc: arcArt, plate: stripesArt }[layout](h);
-  return `<span class="cover" data-size="${size}" data-layout="${layout}">
-    ${art}
-    <span class="cover-text">
-      <span class="cover-title">${hyphenate(esc(b.title))}</span>
+function generatedFace(b) {
+  const title = shortTitle(b.title);
+  const longest = Math.max(...title.split(/\s+/).map((word) => word.length));
+  /* Кегль подбирается под самое длинное слово, чтобы оно не рвалось */
+  const size = Math.min(title.length > 44 ? 8.8 : 10.4, 98 / longest).toFixed(1);
+  return `<span class="cover">
+    ${b.lang === 'uz' ? ORNAMENT : ''}
+    <span class="cover-label">
+      <span class="cover-title" lang="${esc(b.lang)}" style="font-size:${size}cqw">${esc(title)}</span>
       <span class="cover-author">${esc(b.author)}</span>
     </span>
   </span>`;
@@ -62,13 +37,12 @@ function generatedFace(b, h) {
 /* Толщина идёт от корня числа страниц: иначе 40 и 1800 страниц не поместятся в один масштаб */
 export function cover(b, { named = false } = {}) {
   const h = hashCode(b.id);
-  const colors = SECTION_COLORS[b.section];
-  const color = b.color || colors[h % colors.length];
+  const color = b.color || BINDINGS[h % BINDINGS.length];
   const depth = (0.05 + 0.33 * Math.sqrt((b.pages || 300) / 1800)).toFixed(3);
   const name = named ? ` style="view-transition-name:cover-${esc(b.id)}"` : '';
   const face = b.image
     ? `<span class="cover cover-scan"><img src="${esc(b.image)}" alt="" loading="lazy" decoding="async"></span>`
-    : generatedFace(b, h);
+    : generatedFace(b);
   return `<span class="volume-box"${name} aria-hidden="true">
     <span class="volume" style="--depth:${depth};--c:${esc(color)}">
       ${face}
@@ -82,8 +56,8 @@ export function cover(b, { named = false } = {}) {
 export function tile(b) {
   return `<li><a class="tile" href="#/book/${encodeURIComponent(b.id)}" data-book="${esc(b.id)}">
     ${cover(b)}
-    <span class="tile-title">${hyphenate(esc(b.title))}</span>
-    <span class="tile-author">${esc(b.author)}</span>
+    <span class="tile-title" lang="${esc(b.lang)}">${hyphenate(esc(b.title))}</span>
+    <span class="tile-author">${esc(b.author)}${b.year ? `, ${b.year}` : ''}</span>
     ${b.pages ? `<span class="tile-pages">${countPages(b.pages)}</span>` : ''}
   </a></li>`;
 }
@@ -92,7 +66,7 @@ export function resultItem(b) {
   return `<li><a class="result" href="#/book/${encodeURIComponent(b.id)}">
     ${cover(b)}
     <span>
-      <span class="result-title">${esc(b.title)}</span>
+      <span class="result-title" lang="${esc(b.lang)}">${esc(b.title)}</span>
       <span class="result-author">${esc(b.author)}${b.year ? `, ${b.year}` : ''}</span>
     </span>
   </a></li>`;

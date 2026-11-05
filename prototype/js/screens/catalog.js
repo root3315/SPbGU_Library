@@ -27,7 +27,7 @@ function readFilters(params) {
     q: params.get('q') || '',
     section: pick(params.get('s'), library.sections),
     lang: pick(params.get('l'), library.languages),
-    sort: pick(params.get('sort'), SORTS) || 'title',
+    sort: pick(params.get('sort'), SORTS) || 'match',
   };
 }
 
@@ -36,7 +36,7 @@ function filtersToHash({ q, section, lang, sort }) {
   if (q.trim()) params.set('q', q.trim());
   if (section) params.set('s', section);
   if (lang) params.set('l', lang);
-  if (sort !== 'title') params.set('sort', sort);
+  if (sort !== 'match') params.set('sort', sort);
   const query = params.toString();
   return `#/catalog${query ? `?${query}` : ''}`;
 }
@@ -60,7 +60,7 @@ export function catalogScreen({ params }) {
         <div class="cat-bar">
           <form class="field" id="catSearch" role="search">
             <label class="sr" for="catQ">Книга или автор</label>
-            <input id="catQ" type="search" value="${esc(filters.q)}" placeholder="Поиск книги" autocomplete="off">
+            <input id="catQ" type="search" value="${esc(filters.q)}" placeholder="Книга или автор" autocomplete="off">
           </form>
           <button type="button" class="btn btn-quiet filters-toggle" id="filtersToggle" aria-expanded="false" aria-controls="filters">Фильтры</button>
         </div>
