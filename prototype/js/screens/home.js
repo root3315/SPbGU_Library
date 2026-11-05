@@ -35,7 +35,7 @@ export function homeScreen() {
           </p>
         </div>
         <div class="hero-side">
-          <h2>Новые издания</h2>
+          <h2>Из каталога</h2>
           <ul class="tiles tiles-3">${library.featured(3).map(tile).join('')}</ul>
         </div>
       </section>
@@ -46,8 +46,11 @@ export function homeScreen() {
       </section>
 
       <section class="block">
-        <h2>Издания Санкт-Петербургского университета</h2>
-        <ul class="tiles tiles-row">${library.university().map(tile).join('')}</ul>
+        <div class="block-head">
+          <h2>Издания Санкт-Петербургского университета</h2>
+          <a href="#/catalog?u=1">Все ${library.university().length}</a>
+        </div>
+        <ul class="tiles tiles-row tiles-row-8">${library.university().map(tile).join('')}</ul>
       </section>
     </div>`,
   };

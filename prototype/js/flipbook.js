@@ -1,12 +1,11 @@
 /* Книга с перелистыванием: разворот на широком экране, одна страница на узком.
-   В покое страницы лежат картинками, на время переворота лист рисуется на холсте поверх всего.
+   Страницы лежат картинками и не трогаются до конца переворота: иначе при наведении дрогнет текст.
+   На холсте поверх них рисуются только открывшийся кусок следующей страницы и сам лист.
    Геометрия считается для правой страницы: лист сгибается по серединному перпендикуляру
    между углом листа и точкой, куда этот угол тянут. Левая сторона получается зеркалом */
 import { reducedMotion } from './format.js';
 
 const PAPER = '#f7f4ec';
-const DURATION = 760;
-const PEEK_ZONE = 110;
 
 const dot = (a, b) => a.x * b.x + a.y * b.y;
 const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y });
@@ -41,7 +40,7 @@ function constrain(point, corner, w, h) {
   return limit(limit(point, near, w), far, Math.hypot(w, h));
 }
 
-export function createFlipbook({ root, total, url, label, coverColor, start, onChange, onError, signal }) {
+export function createFlipbook({ root, total, thickness, url, label, coverColor, start, onChange, onPreview, onError, signal }) {
   root.style.setProperty('--book-cover', coverColor);
   root.innerHTML = `
     <div class="flip-stack flip-stack-left"></div>
@@ -56,11 +55,14 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
   const slots = { left: root.querySelector('.flip-left'), right: root.querySelector('.flip-right') };
   const stacks = { left: root.querySelector('.flip-stack-left'), right: root.querySelector('.flip-stack-right') };
   const images = new Map();
-  const wide = matchMedia('(min-width: 861px)');
+  /* Разворот, когда две страницы помещаются рядом: широкий экран или телефон лёжа */
+  const screen = matchMedia('(min-width: 861px), (min-width: 560px) and (orientation: landscape)');
+  const wide = { get matches() { return screen.matches && total > 1; } };
 
   let spread = 0;
   let session = null;
   let frame = 0;
+  let clearing = 0;
   let large = false;
 
   /* Разворот: на первом слева форзац, дальше страницы парами */
@@ -104,6 +106,8 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
   function setSlot(slot, page) {
     const element = slots[slot];
     const image = element.firstElementChild;
+    if (element.dataset.page === String(page)) return;
+    element.dataset.page = page;
     element.classList.toggle('blank', !page);
     if (page) {
       image.src = url(page);
@@ -114,8 +118,12 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
     }
   }
 
+  /* Обрез толще у объёмных книг и растёт вместе с листом */
   function setStacks(index) {
     const share = lastSpread() ? index / lastSpread() : 0;
+    const pageWidth = slots.right.getBoundingClientRect().width;
+    const edge = Math.min(Math.max(6, thickness / 40), 22) * (pageWidth / 360);
+    root.style.setProperty('--edge', `${Math.round(Math.min(wide.matches ? 28 : 10, Math.max(6, edge)))}px`);
     root.style.setProperty('--stack-left', share.toFixed(3));
     root.style.setProperty('--stack-right', (1 - share).toFixed(3));
   }
@@ -133,7 +141,9 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
   /* Рабочая область холста: корешок и верх книги в координатах окна */
   function measure() {
     const right = slots.right.getBoundingClientRect();
-    return { spine: right.left, top: right.top, w: right.width, h: right.height };
+    const spine = Math.round(right.left);
+    const top = Math.round(right.top);
+    return { spine, top, w: Math.round(right.right) - spine, h: Math.round(right.bottom) - top };
   }
 
   function fitCanvas() {
@@ -165,10 +175,11 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
       const scale = Math.min(w / image.naturalWidth, h / image.naturalHeight);
       const dw = image.naturalWidth * scale;
       const dh = image.naturalHeight * scale;
-      ctx.drawImage(image, x + (w - dw) / 2, (h - dh) / 2, dw, dh);
+      ctx.drawImage(image, x + (slot === 'right' ? 0 : w - dw), (h - dh) / 2, dw, dh);
     }
     const shade = ctx.createLinearGradient(0, 0, slot === 'right' ? w * 0.09 : -w * 0.09, 0);
-    shade.addColorStop(0, 'rgb(0 0 0 / 16%)');
+    shade.addColorStop(0, 'rgb(0 0 0 / 30%)');
+    shade.addColorStop(0.17, 'rgb(0 0 0 / 12%)');
     shade.addColorStop(1, 'rgb(0 0 0 / 0%)');
     ctx.fillStyle = shade;
     ctx.fillRect(x, 0, w, h);
@@ -187,12 +198,14 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
     const pull = sub(c, p);
     const length = Math.hypot(pull.x, pull.y);
     if (length < 0.5) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(dir > 0 ? 0 : -w, 0, w, h);
-      ctx.clip();
-      paintPage(session.front, session.frontSlot, w, h);
-      ctx.restore();
+      if (session.reversed) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, w, h);
+        ctx.clip();
+        paintPage(session.front, session.frontSlot, w, h);
+        ctx.restore();
+      }
       return;
     }
     const n = { x: pull.x / length, y: pull.y / length };
@@ -214,18 +227,19 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
       ctx.save();
       trace(reveal.map(real));
       ctx.clip();
+      if (!session.reversed) paintPage(session.under, session.frontSlot, w, h);
       const from = along(0);
-      const to = along(w * 0.45);
+      const to = along(w * 0.28);
       const shadow = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
-      shadow.addColorStop(0, 'rgb(0 0 0 / 42%)');
+      shadow.addColorStop(0, 'rgb(0 0 0 / 30%)');
       shadow.addColorStop(1, 'rgb(0 0 0 / 0%)');
       ctx.fillStyle = shadow;
       ctx.fillRect(dir > 0 ? 0 : -w, 0, w, h);
       ctx.restore();
     }
 
-    /* Ещё не загнутая часть листа */
-    if (front.length > 2) {
+    /* Прилетающий на узком экране лист: у остальных эта часть и есть страница под холстом */
+    if (session.reversed && front.length > 2) {
       ctx.save();
       trace(front.map(real));
       ctx.clip();
@@ -238,7 +252,9 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
       ctx.globalAlpha = fade;
       ctx.save();
       ctx.shadowColor = 'rgb(0 0 0 / 38%)';
-      ctx.shadowBlur = 34;
+      ctx.shadowBlur = session.peek ? 18 : 34;
+      ctx.shadowOffsetX = session.peek ? -4 * dir * ratio : 0;
+      ctx.shadowOffsetY = session.peek ? -4 * ratio : 0;
       ctx.fillStyle = PAPER;
       trace(leaf.map(real));
       ctx.fill();
@@ -255,6 +271,13 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
         dir * scale * n.x, scale * n.y,
       );
       paintPage(session.back, session.backSlot, w, h);
+      /* У приподнятого угла виден край скана: бумага прячет фон сканера */
+      if (session.peek) {
+        ctx.globalAlpha = fade * 0.82;
+        ctx.fillStyle = PAPER;
+        ctx.fillRect(session.backSlot === 'right' ? 0 : -w, 0, w, h);
+        ctx.globalAlpha = fade;
+      }
       ctx.restore();
 
       /* Блик на изгибе: темно у сгиба, светлее на выпуклой части */
@@ -266,7 +289,7 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
       const gloss = ctx.createLinearGradient(from.x, from.y, to.x, to.y);
       gloss.addColorStop(0, 'rgb(0 0 0 / 26%)');
       gloss.addColorStop(0.07, 'rgb(0 0 0 / 8%)');
-      gloss.addColorStop(0.24, 'rgb(255 255 255 / 42%)');
+      gloss.addColorStop(0.24, 'rgb(255 255 255 / 22%)');
       gloss.addColorStop(0.5, 'rgb(255 255 255 / 0%)');
       gloss.addColorStop(1, 'rgb(0 0 0 / 8%)');
       ctx.fillStyle = gloss;
@@ -285,12 +308,23 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
     canvas.classList.remove('on');
   }
 
+  /* Холст убирается, когда страницы под ним уже отрисованы, иначе мелькнёт пустой лист */
   function settle(landed) {
     const finalSpread = landed ? session.target : spread;
-    stopSession();
+    session = null;
+    cancelAnimationFrame(frame);
+    frame = 0;
     const moved = finalSpread !== spread;
     spread = finalSpread;
     rest(spread);
+    clearing += 1;
+    const id = clearing;
+    const decoded = Object.values(slots).map((slot) => slot.firstElementChild)
+      .filter((image) => image.getAttribute('src')).map((image) => image.decode().catch(() => {}));
+    const wait = new Promise((resolve) => { setTimeout(resolve, 160); });
+    Promise.race([Promise.all(decoded), wait]).then(() => {
+      if (id === clearing && !session) stopSession();
+    });
     if (moved) onChange(firstPage(spread), pagesOf(spread));
   }
 
@@ -310,10 +344,12 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
         return;
       }
     } else {
-      s.point.x += (s.aim.x - s.point.x) * 0.3;
-      s.point.y += (s.aim.y - s.point.y) * 0.3;
+      const step = 1 - Math.exp(-(now - (s.last ?? now - 16)) / (s.peek ? 130 : 60));
+      s.last = now;
+      s.point.x += (s.aim.x - s.point.x) * step;
+      s.point.y += (s.aim.y - s.point.y) * step;
       drawSession();
-      if (s.peek && !s.hovered && Math.hypot(s.point.x - s.aim.x, s.point.y - s.aim.y) < 1) {
+      if (s.peek && !s.hovered && Math.hypot(s.point.x - s.aim.x, s.point.y - s.aim.y) < 0.6) {
         settle(false);
         return;
       }
@@ -332,18 +368,18 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
     const corner = cornerY;
     let front;
     let back;
+    let under;
     if (!wide.matches) {
       front = forward ? current.right : next.right;
-      back = undefined;
-      setSlot('right', forward ? next.right : current.right);
+      under = forward ? next.right : current.right;
     } else if (forward) {
       front = current.right;
       back = next.left;
-      setSlot('right', next.right);
+      under = next.right;
     } else {
       front = current.left;
       back = next.right;
-      setSlot('left', next.left);
+      under = next.left;
     }
     const home = { x: w, y: corner * h };
     const away = { x: -w, y: corner * h };
@@ -354,6 +390,7 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
       reversed,
       front,
       back,
+      under,
       frontSlot: dir > 0 ? 'right' : 'left',
       backSlot: dir > 0 ? 'left' : 'right',
       home,
@@ -361,13 +398,16 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
       point: reversed ? { ...away } : { ...home },
       aim: reversed ? { ...away } : { ...home },
     };
+    clearing += 1;
     canvas.classList.add('on');
-    setStacks(target);
+    drawSession();
     return session;
   }
 
   function play(complete) {
     const s = session;
+    setStacks(complete ? s.target : spread);
+    if (complete) onPreview(pagesOf(s.target));
     const towardsAway = s.reversed ? !complete : complete;
     const to = towardsAway ? s.away : s.home;
     const { h } = measure();
@@ -378,8 +418,8 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
       from: { ...s.point },
       to,
       complete,
-      duration: Math.max(240, DURATION * Math.min(1, remaining + 0.15)),
-      lift: (s.corner ? -1 : 1) * h * 0.1 * Math.min(1, remaining * 2),
+      duration: Math.max(240, (620 + s.home.x * 0.25) * Math.min(1, remaining + 0.15)),
+      lift: (s.corner ? -1 : 1) * h * 0.04 * Math.min(1, remaining * 2),
     };
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(tick);
@@ -440,6 +480,16 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
     return e.clientY - top < h / 2 ? 0 : 1;
   };
 
+  const peekZone = () => Math.min(180, Math.max(90, measure().w * 0.2));
+  const peekAim = (e) => {
+    const { w, h } = measure();
+    const zone = peekZone();
+    const point = pointerPoint(e, session.dir);
+    const x = Math.min(w - w * 0.1, Math.max(w - zone, point.x));
+    const inset = Math.min(zone * 0.8, Math.max(w * 0.08, session.corner ? h - point.y : point.y));
+    return { x, y: session.corner ? h - inset : inset };
+  };
+
   let press = null;
   function hasImages(index) {
     return Object.values({ ...pagesOf(index), ...pagesOf(spread) }).filter(Boolean)
@@ -485,26 +535,31 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
         press.dragging = true;
         root.setPointerCapture(e.pointerId);
       }
-      if (session && !session.auto) session.aim = pointerPoint(e, session.dir);
+      if (session && !session.auto) {
+        const { h } = measure();
+        const aim = pointerPoint(e, session.dir);
+        session.aim = { x: aim.x, y: Math.min(h + 16, Math.max(-16, aim.y)) };
+      }
       return;
     }
     if (e.pointerType !== 'mouse' || large || session?.auto) return;
     /* Угол листа приподнимается, когда мышь рядом с ним */
     const { spine, top, w, h } = measure();
     const left = wide.matches ? spine - w : spine;
-    const side = e.clientX > spine + w - PEEK_ZONE ? 1 : e.clientX < left + PEEK_ZONE ? -1 : 0;
+    const zone = peekZone();
+    const side = e.clientX > spine + w - zone ? 1 : e.clientX < left + zone ? -1 : 0;
     const y = e.clientY - top;
-    const near = side && (y < PEEK_ZONE || y > h - PEEK_ZONE);
+    const near = side && (y < zone || y > h - zone);
     if (session?.peek) {
       if (near && session.dir === (wide.matches ? side : 1)) {
         session.hovered = true;
-        session.aim = { x: w - 64, y: session.corner ? h - 46 : 46 };
+        session.aim = peekAim(e);
       } else {
         session.hovered = false;
         session.aim = { ...session.home };
       }
     } else if (near && !session && (side > 0 || wide.matches)) {
-      if (startDrag(e, side, true)) session.aim = { x: w - 64, y: session.corner ? h - 46 : 46 };
+      if (startDrag(e, side, true)) session.aim = peekAim(e);
       else quietly(prepare(spread + side));
     }
   });
@@ -543,7 +598,7 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
     rest(spread);
     onChange(firstPage(spread), pagesOf(spread));
   }
-  wide.addEventListener('change', rebuild, { signal });
+  screen.addEventListener('change', rebuild, { signal });
   signal.addEventListener('abort', () => {
     request += 1;
     stopSession();
@@ -561,6 +616,7 @@ export function createFlipbook({ root, total, url, label, coverColor, start, onC
     previous: () => turnTo((goal ?? spread) - 1),
     atStart: () => spread === 0,
     atEnd: () => spread === lastSpread(),
+    isSpread: () => wide.matches,
     pages: () => pagesOf(spread),
     setLarge: (on) => { large = on; },
   };

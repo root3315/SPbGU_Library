@@ -15,6 +15,7 @@ export const nav = {
   heroQuery: '',
   back: { label: 'Каталог', href: () => nav.catalog },
   lastBook: null,
+  cameFromBook: false,
   linkClick: false,
   restoreScroll: false,
   positions: new Map(),

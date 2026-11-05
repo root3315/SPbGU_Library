@@ -72,6 +72,7 @@ export function route({ initial = false } = {}) {
 
   const fromBook = nav.lastBook;
   if (fromBook && page !== 'book') nameTransition(fromBook);
+  nav.cameFromBook = page === 'read' && fromBook === id;
   nav.lastBook = page === 'book' && library.has(id) ? id : null;
   document.title = `${screen.title ? `${screen.title} — ` : ''}Электронная библиотека СПбГУ`;
   const active = Object.hasOwn(ACTIVE_NAV, page) ? ACTIVE_NAV[page] : page;

@@ -10,6 +10,8 @@ const isNight = () => root.classList.contains('night');
 
 themeToggle.setAttribute('aria-pressed', isNight());
 themeToggle.addEventListener('click', () => {
+  root.classList.add('flip-theme');
+  setTimeout(() => root.classList.remove('flip-theme'), 400);
   const night = !isNight();
   store.setTheme(night ? 'night' : 'day');
   withTransition(() => {
@@ -75,8 +77,13 @@ function hideSplash() {
     root.classList.add('first');
     setTimeout(() => root.classList.remove('first'), 900);
     splash.addEventListener('transitionend', () => splash.remove(), { once: true });
-  }, 700);
+  }, 350);
 }
+
+/* Снимок обложки проявляется, когда загрузился */
+document.addEventListener('load', (e) => {
+  if (e.target.matches?.('.cover-scan img')) e.target.classList.add('loaded');
+}, true);
 
 updateShelfCount();
 try {

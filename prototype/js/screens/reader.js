@@ -9,6 +9,7 @@ const pageUrl = (b, page) => `scans/${encodeURIComponent(b.id)}/${page}.jpg`;
 const ARROW = { prev: 'M12.5 4.5 7 10l5.5 5.5', next: 'M7.5 4.5 13 10l-5.5 5.5' };
 const arrow = (name) => `<svg viewBox="0 0 20 20" aria-hidden="true"><path d="${ARROW[name]}"/></svg>`;
 const FRAGMENT_NOTE = 'Это страницы из скана, не вся книга.';
+const ONE_NOTE = 'В скане одна страница, полного текста пока нет.';
 const LAST_NOTE = 'Страницы из скана закончились. Полный текст появится после оцифровки.';
 
 export function readerScreen({ id, params, signal }) {
@@ -20,9 +21,9 @@ export function readerScreen({ id, params, signal }) {
   const controls = b.scans > 1 ? `<form class="reader-controls" id="pageJump" novalidate>
       <button type="button" class="reader-turn" id="pagePrev" aria-label="Предыдущая страница">${arrow('prev')}</button>
       <label class="reader-go" id="pageGo">
-        <span class="reader-word">Страница</span>
-        <input id="pageInput" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="go" autocomplete="off" maxlength="${digits}" style="--digits:${digits}" aria-label="Номер страницы, всего ${b.scans}">
-        <span>из ${b.scans}</span>
+        <span class="reader-word" id="pageWord">Страница</span>
+        <input id="pageInput" type="text" inputmode="numeric" pattern="[0-9]*" enterkeyhint="go" autocomplete="off" maxlength="4" style="--digits:${digits}" aria-label="Номер страницы, всего ${b.scans}">
+        <span id="pageTotal">из ${b.scans}</span>
       </label>
       <button type="button" class="reader-turn" id="pageNext" aria-label="Следующая страница">${arrow('next')}</button>
       <button type="submit" class="btn btn-main reader-submit">Перейти</button>
@@ -62,6 +63,8 @@ function bind(b, first, signal) {
   const input = document.getElementById('pageInput');
   const goLabel = document.getElementById('pageGo');
   const status = document.getElementById('pageStatus');
+  const word = document.getElementById('pageWord');
+  const totalLabel = document.getElementById('pageTotal');
   let page = first;
   let retry = null;
   let book = null;
@@ -69,12 +72,17 @@ function bind(b, first, signal) {
   const browserZoomed = () => (visualViewport?.scale || 1) > 1.05;
   const editing = () => document.activeElement === input;
 
+  let shownText = String(first);
   function paint(pages) {
     const shown = [pages.left, pages.right].filter(Boolean);
-    note.textContent = shown.includes(b.scans) ? LAST_NOTE : FRAGMENT_NOTE;
+    note.textContent = b.scans === 1 ? ONE_NOTE : shown.includes(b.scans) ? LAST_NOTE : FRAGMENT_NOTE;
     if (!form) return;
-    if (!editing()) input.value = page;
-    input.placeholder = page;
+    shownText = shown.join('–');
+    word.textContent = shown.length > 1 ? 'Страницы' : 'Страница';
+    if (!editing()) input.value = shownText;
+    input.placeholder = shownText;
+    const digits = String(b.scans).length;
+    input.style.setProperty('--digits', book.isSpread() ? digits * 2 + 1 : digits);
     status.textContent = `${shown.length > 1 ? `Страницы ${shown.join(' и ')}` : `Страница ${shown[0]}`} из ${b.scans}`;
     prev.setAttribute('aria-disabled', book.atStart());
     next.setAttribute('aria-disabled', book.atEnd());
@@ -94,11 +102,13 @@ function bind(b, first, signal) {
   book = createFlipbook({
     root: document.getElementById('flipbook'),
     total: b.scans,
+    thickness: b.pages || 300,
     start: first,
     coverColor: b.color || '#4a4038',
     url: (n) => pageUrl(b, n),
     label: (n) => `Страница ${n} из ${b.scans}`,
     signal,
+    onPreview: (pages) => paint(pages),
     onChange(firstShown, pages) {
       const moved = firstShown !== page;
       page = firstShown;
@@ -124,6 +134,7 @@ function bind(b, first, signal) {
   const setWrong = (on) => {
     goLabel.classList.toggle('wrong', on);
     input.setAttribute('aria-invalid', on);
+    totalLabel.textContent = on ? `такой нет, всего ${b.scans}` : `из ${b.scans}`;
   };
   const finishJump = () => {
     input.value = '';
@@ -136,7 +147,7 @@ function bind(b, first, signal) {
     form.classList.add('jumping');
   });
   input?.addEventListener('blur', () => {
-    input.value = page;
+    input.value = shownText;
     setWrong(false);
     form.classList.remove('jumping');
   });
@@ -172,6 +183,12 @@ function bind(b, first, signal) {
   prev?.addEventListener('click', () => book.previous());
   next?.addEventListener('click', () => book.next());
   zoom.addEventListener('click', () => setLarge(!sheet.classList.contains('large')));
+  /* Пришли со страницы книги: «Назад» возвращает по истории, иначе браузерная кнопка откроет просмотр снова */
+  document.querySelector('.reader-bar .back').addEventListener('click', (e) => {
+    if (!nav.cameFromBook) return;
+    e.preventDefault();
+    history.back();
+  });
   document.getElementById('scanRetry').addEventListener('click', () => {
     setFailed(false);
     retry?.();
@@ -199,5 +216,7 @@ function bind(b, first, signal) {
   visualViewport?.addEventListener('resize', onViewport, { signal });
   visualViewport?.addEventListener('scroll', liftControls, { signal });
 
-  paint(book.pages());
+  const opened = book.pages();
+  page = opened.left || opened.right;
+  paint(opened);
 }

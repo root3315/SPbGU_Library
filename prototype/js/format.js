@@ -7,10 +7,16 @@ export const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({
 export const hashCode = (s) => [...String(s)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7);
 
 /* Мягкие переносы в длинных словах: встроенного словаря для русского в браузере может не быть */
-export const hyphenate = (text) => text.replace(/[a-zа-яёўқғҳ]{10,}/gi, (word) => word.replace(
-  /[aeiouаеёиоуўыэюя][bcdfghjklmnpqrstvwxyzбвгғджзйклмнпқрстфхҳцчшщ]?(?=[bcdfghjklmnpqrstvwxyzбвгғджзйклмнпқрстфхҳцчшщ][aeiouаеёиоуўыэюя][a-zа-яёўқғҳ])/gi,
-  (part, offset) => (offset === 0 && part.length === 1 ? part : `${part}\u00AD`),
-));
+export const hyphenate = (text) => text
+  /* Номер не отрывается от знака: «№ 3», «Т. 67», «Том 2» */
+  .replace(/(№|Т\.|т\.|Том) (?=\d)/g, '$1 ')
+  .replace(/[a-zа-яёўқғҳ]{10,}/gi, (word, start, whole) => (whole[start - 1] === '-' ? word : word.replace(
+    /[aeiouаеёиоуўыэюя][bcdfghjklmnpqrstvwxyzбвгғджзйклмнпқрстфхҳцчшщ]?(?=[bcdfghjklmnpqrstvwxyzбвгғджзйклмнпқрстфхҳцчшщ][aeiouаеёиоуўыэюя][a-zа-яёўқғҳ])/gi,
+    (part, offset) => {
+      const end = offset + part.length;
+      return end < 3 || word.length - end < 3 ? part : `${part}­`;
+    },
+  )));
 
 export const pagesText = (b) => {
   if (!b.pages) return 'объём уточняется';
@@ -35,8 +41,11 @@ export function withTransition(update) {
     update();
     return;
   }
+  /* Шапка наверху страницы стоит на месте при смене экрана, иначе она мигает вместе с ним */
+  const root = document.documentElement;
+  root.classList.toggle('pin-top', scrollY < 1);
   const transition = document.startViewTransition(update);
   /* Быстрое переключение обрывает предыдущий переход: это нормально */
   transition.ready.catch(() => {});
-  transition.finished.catch(() => {});
+  transition.finished.catch(() => {}).finally(() => root.classList.remove('pin-top'));
 }

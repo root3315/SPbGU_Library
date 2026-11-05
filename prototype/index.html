@@ -9,14 +9,15 @@
   <script>
     /* Тема ставится до первой отрисовки, иначе ночью вспыхнет светлый экран */
     try {
-      if (JSON.parse(localStorage.getItem('theme')) === 'night') document.documentElement.classList.add('night');
+      const theme = JSON.parse(localStorage.getItem('theme')); if (theme === 'night' || (!theme && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('night');
     } catch { /* приватный режим */ }
   </script>
   <style>
     html.night { background: #161614; color-scheme: dark; }
     /* Стили экрана загрузки встроены, чтобы он был готов к первой отрисовке */
-    .splash { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: #62241b; opacity: 1; transition: opacity .45s ease, visibility .45s; }
+    .splash { position: fixed; inset: 0; width: 100vw; z-index: 50; display: grid; place-items: center; background: #62241b; opacity: 1; transition: opacity .45s ease, visibility .45s; }
     .splash.done { opacity: 0; visibility: hidden; }
+    .splash.done .splash-mark { opacity: 0; transition: opacity .12s; }
     html:has(.splash:not(.done)) { background: #62241b !important; }
     .splash-mark { position: relative; display: grid; place-items: center; width: min(46vmin, 220px); aspect-ratio: 1; }
     .splash-mark svg { width: 58%; fill: none; stroke: #ececec; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }

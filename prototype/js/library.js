@@ -24,6 +24,7 @@ const searchIndex = new Map(BOOKS.map((b) => [b.id, {
   title: words(b.title),
   author: words(`${b.author} ${b.fullAuthor}`),
   rest: words(`${b.year ?? ''} ${SECTIONS[b.section]} ${b.about} ${b.keywords ?? ''}`),
+  keywords: words(b.keywords ?? ''),
 }]));
 
 function oneEditAway(a, b) {
@@ -80,14 +81,25 @@ export const library = {
   newest: (limit) => [...BOOKS].sort(SORTS.new.compare).slice(0, limit),
   university: () => BOOKS.filter((b) => b.spbu),
   countInSection: (section) => BOOKS.filter((b) => b.section === section).length,
+  /* Похожие: общий автор и общие слова важнее раздела, чужие разделы не подмешиваются */
   related(b, limit) {
-    const others = BOOKS.filter((x) => x.id !== b.id);
-    const sameSection = others.filter((x) => x.section === b.section);
-    return [...sameSection, ...others.filter((x) => x.section !== b.section)].slice(0, limit);
+    const own = searchIndex.get(b.id);
+    const shared = (x, y) => x.filter((word) => word.length > 3 && y.includes(word)).length;
+    const closeness = (x) => {
+      const other = searchIndex.get(x.id);
+      return shared(own.author, other.author) * 4 + shared(own.title, other.title) * 2 + shared(own.keywords, other.keywords) * 2
+        + (x.lang === b.lang ? 1 : 0);
+    };
+    return BOOKS.filter((x) => x.id !== b.id && x.section === b.section)
+      .map((x) => [x, closeness(x)])
+      .sort((x, y) => y[1] - x[1])
+      .map(([x]) => x)
+      .slice(0, limit);
   },
-  list({ q = '', section = '', lang = '', sort = 'match' }) {
+  list({ q = '', section = '', lang = '', university = false, sort = 'match' }) {
     const found = BOOKS.filter((b) => (!section || b.section === section)
       && (!lang || b.lang === lang)
+      && (!university || b.spbu)
       && (!q.trim() || score(b, q) > 0));
     return sort === 'match' && q.trim()
       ? found.sort((a, b) => score(b, q) - score(a, q) || byTitle(a, b))

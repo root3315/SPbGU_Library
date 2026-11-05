@@ -27,15 +27,17 @@ function readFilters(params) {
     q: params.get('q') || '',
     section: pick(params.get('s'), library.sections),
     lang: pick(params.get('l'), library.languages),
+    university: params.get('u') === '1',
     sort: pick(params.get('sort'), SORTS) || 'match',
   };
 }
 
-function filtersToHash({ q, section, lang, sort }) {
+function filtersToHash({ q, section, lang, university, sort }) {
   const params = new URLSearchParams();
   if (q.trim()) params.set('q', q.trim());
   if (section) params.set('s', section);
   if (lang) params.set('l', lang);
+  if (university) params.set('u', '1');
   if (sort !== 'match') params.set('sort', sort);
   const query = params.toString();
   return `#/catalog${query ? `?${query}` : ''}`;
@@ -181,11 +183,11 @@ function bind(filters, signal) {
   let shownKey = null;
   const keyOf = (found) => (found.length
     ? found.map((b) => b.id).join()
-    : `?${filters.q.trim()}|${filters.section}|${filters.lang}`);
+    : `?${filters.q.trim()}|${filters.section}|${filters.lang}|${filters.university}`);
 
   function renderSummary(found) {
-    const chosen = [library.sections[filters.section], library.languages[filters.lang]].filter(Boolean);
-    const summary = `Нашлось ${countBooks(found.length)}`;
+    const chosen = [library.sections[filters.section], library.languages[filters.lang], filters.university && 'Издания СПбГУ'].filter(Boolean);
+    const summary = filters.q.trim() || chosen.length ? `Нашлось ${countBooks(found.length)}` : `В каталоге ${countBooks(found.length)}`;
     count.textContent = chosen.length ? `${summary}: ${chosen.join(', ')}` : summary;
     count.classList.toggle('sr', !found.length);
     document.getElementById('sort').hidden = !found.length;
@@ -247,6 +249,7 @@ function bind(filters, signal) {
   function reset({ query = false } = {}) {
     filters.section = '';
     filters.lang = '';
+    filters.university = false;
     if (query) {
       filters.q = '';
       search.value = '';

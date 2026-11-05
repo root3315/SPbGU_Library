@@ -10,7 +10,8 @@ export function shelfScreen() {
     <div class="wrap wrap-page">
       <h1>Моя полка</h1>
       ${books.length
-    ? `<ul class="tiles tiles-fill">${books.map(tile).join('')}</ul>`
+    ? `<ul class="tiles tiles-fill">${books.map(tile).join('')}</ul>
+       <p class="shelf-note">Полка хранится в этом браузере.</p>`
     : `<div class="empty"><p>Откройте книгу и нажмите «На мою полку», чтобы она появилась здесь.</p>
          <a class="btn btn-main" href="#/catalog">Открыть каталог</a></div>
        ${newestBlock()}`}
