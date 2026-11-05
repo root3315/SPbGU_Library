@@ -69,11 +69,6 @@ document.addEventListener('keydown', (e) => {
 /* Заставка держится недолго и всегда уходит, даже если что-то пошло не так при запуске */
 function hideSplash() {
   const splash = document.getElementById('splash');
-  if (root.classList.contains('no-splash')) {
-    splash.remove();
-    return;
-  }
-  store.markSplashShown();
   setTimeout(() => {
     splash.classList.add('done');
     splash.addEventListener('transitionend', () => splash.remove(), { once: true });

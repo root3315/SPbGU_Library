@@ -17,7 +17,6 @@
     /* Экран загрузки стоит здесь, чтобы появиться раньше внешних стилей */
     .splash { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: #62241b; opacity: 1; transition: opacity .45s ease, visibility .45s; }
     .splash.done { opacity: 0; visibility: hidden; }
-    .no-splash .splash { display: none; }
     .splash-mark { position: relative; display: grid; place-items: center; width: min(46vmin, 220px); aspect-ratio: 1; }
     .splash-mark svg { width: 58%; fill: none; stroke: #ececec; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
     .splash-mark::after {
@@ -33,12 +32,6 @@
     @keyframes splash-turn { to { transform: rotate(360deg); } }
     @media (prefers-reduced-motion: reduce) { .splash-mark::after { animation: none; } }
   </style>
-  <script>
-    /* Заставка показывается один раз за визит */
-    try {
-      if (sessionStorage.getItem('splash')) document.documentElement.classList.add('no-splash');
-    } catch { /* приватный режим */ }
-  </script>
   <link rel="stylesheet" href="styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
