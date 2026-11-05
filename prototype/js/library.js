@@ -8,7 +8,7 @@ const norm = (s) => String(s).toLowerCase().replace(/ё/g, 'е');
 const words = (s) => norm(s).replace(/[.,;:!?«»"()/]/g, ' ').split(/\s+/).filter(Boolean);
 const searchIndex = new Map(BOOKS.map((b) => [b.id, words(
   `${b.title} ${b.author} ${b.fullAuthor} ${b.year} ${SECTIONS[b.section]} ${b.about} ${b.code}`,
-)]));
+).flatMap((word) => [word, ...word.split('-')])]));
 
 function oneEditAway(a, b) {
   if (Math.abs(a.length - b.length) > 1) return false;
@@ -25,7 +25,8 @@ const stem = (query) => (/\d/.test(query) ? query : query.slice(0, query.length 
 function wordMatches(query, candidates) {
   const base = stem(query);
   return candidates.some((word) => word.startsWith(base)
-    || (query.length >= 6 && !/\d/.test(query) && oneEditAway(query, word)));
+    || (query.length >= 6 && !/\d/.test(query)
+      && (oneEditAway(query, word) || (base.length >= 6 && oneEditAway(base, word.slice(0, base.length))))));
 }
 
 function matches(b, query) {

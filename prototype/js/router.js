@@ -42,7 +42,7 @@ export function focusHeading() {
 
 /* Перелетает только одна обложка: иначе на большом каталоге браузер снимает каждую плитку */
 export function nameTransition(id) {
-  const box = view.querySelector(`.tile[data-book="${id}"] .volume-box`);
+  const box = view.querySelector(`.tile[data-book="${CSS.escape(id)}"] .volume-box`);
   if (box) box.style.viewTransitionName = `cover-${id}`;
 }
 
@@ -70,7 +70,8 @@ export function route({ initial = false } = {}) {
     view.innerHTML = screen.html;
   }
 
-  if (nav.lastBook && page !== 'book') nameTransition(nav.lastBook);
+  const fromBook = nav.lastBook;
+  if (fromBook && page !== 'book') nameTransition(fromBook);
   nav.lastBook = page === 'book' && library.has(id) ? id : null;
   document.title = `${screen.title ? `${screen.title} — ` : ''}Электронная библиотека СПбГУ`;
   const active = Object.hasOwn(ACTIVE_NAV, page) ? ACTIVE_NAV[page] : page;
@@ -79,8 +80,13 @@ export function route({ initial = false } = {}) {
     else a.removeAttribute('aria-current');
   });
 
-  window.scrollTo(0, nav.restoreScroll ? nav.positions.get(addressKey()) || 0 : 0);
+  const restored = nav.restoreScroll;
+  window.scrollTo(0, restored ? nav.positions.get(addressKey()) || 0 : 0);
   nav.restoreScroll = false;
   nav.linkClick = false;
-  if (!initial) focusHeading();
+  if (initial) return;
+  /* При возврате фокус встаёт на открытую книгу, иначе клавиатура потеряет место в списке */
+  const tile = restored && fromBook && view.querySelector(`.tile[data-book="${CSS.escape(fromBook)}"]`);
+  if (tile) tile.focus({ preventScroll: true });
+  else focusHeading();
 }

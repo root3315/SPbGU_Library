@@ -16,7 +16,7 @@ export function cover(b, { named = false } = {}) {
   const [generatedColor, textColor] = COVER_COLORS[h % COVER_COLORS.length];
   const color = b.color || generatedColor;
   const depth = (0.05 + 0.33 * Math.sqrt((b.pages || 300) / 1800)).toFixed(3);
-  const name = named ? ` style="view-transition-name:cover-${b.id}"` : '';
+  const name = named ? ` style="view-transition-name:cover-${esc(b.id)}"` : '';
   const face = b.image
     ? `<span class="cover cover-scan"><img src="${esc(b.image)}" alt="" loading="lazy" decoding="async"></span>`
     : `<span class="cover" data-size="${size}" data-layout="${(h >>> 4) % 3}" style="--t:${textColor}">
@@ -24,7 +24,7 @@ export function cover(b, { named = false } = {}) {
         <span class="cover-title">${esc(b.title)}</span>
       </span>`;
   return `<span class="volume-box"${name} aria-hidden="true">
-    <span class="volume" style="--depth:${depth};--c:${color}">
+    <span class="volume" style="--depth:${depth};--c:${esc(color)}">
       ${face}
       <span class="edge edge-pages"></span>
       <span class="edge edge-top"></span>
@@ -34,7 +34,7 @@ export function cover(b, { named = false } = {}) {
 }
 
 export function tile(b) {
-  return `<li><a class="tile" href="#/book/${b.id}" data-book="${b.id}">
+  return `<li><a class="tile" href="#/book/${encodeURIComponent(b.id)}" data-book="${esc(b.id)}">
     ${cover(b)}
     <span class="tile-title">${hyphenate(esc(b.title))}</span>
     <span class="tile-author">${esc(b.author)}</span>
@@ -43,7 +43,7 @@ export function tile(b) {
 }
 
 export function resultItem(b) {
-  return `<li><a class="result" href="#/book/${b.id}">
+  return `<li><a class="result" href="#/book/${encodeURIComponent(b.id)}">
     ${cover(b)}
     <span>
       <span class="result-title">${esc(b.title)}</span>

@@ -1,7 +1,7 @@
 import { cover } from '../components.js';
 import { esc } from '../format.js';
 import { library } from '../library.js';
-import { store } from '../store.js';
+import { clampFontSize, FONT_SIZE, store } from '../store.js';
 import { missingScreen } from './missing.js';
 
 export function readerScreen({ id }) {
@@ -18,7 +18,7 @@ export function readerScreen({ id }) {
     html: `
     <div class="reader">
       <div class="reader-bar">
-        <a class="back" href="#/book/${b.id}">Назад</a>
+        <a class="back" href="#/book/${encodeURIComponent(b.id)}">Назад</a>
         ${b.text ? `<div class="reader-tools" role="group" aria-label="Размер текста">
           <button type="button" id="fontDown" aria-label="Уменьшить шрифт">А−</button>
           <button type="button" id="fontUp" aria-label="Увеличить шрифт">А+</button>
@@ -36,13 +36,21 @@ export function readerScreen({ id }) {
 
 function bind() {
   const body = document.getElementById('readerBody');
+  const down = document.getElementById('fontDown');
+  const up = document.getElementById('fontUp');
   let size = store.fontSize();
-  const setSize = (next) => {
-    size = Math.min(28, Math.max(16, next));
+  const apply = () => {
     body.style.fontSize = `${size}px`;
+    if (!down) return;
+    down.disabled = size === FONT_SIZE.min;
+    up.disabled = size === FONT_SIZE.max;
+  };
+  const setSize = (next) => {
+    size = clampFontSize(next);
+    apply();
     store.setFontSize(size);
   };
-  body.style.fontSize = `${size}px`;
-  document.getElementById('fontDown')?.addEventListener('click', () => setSize(size - 2));
-  document.getElementById('fontUp')?.addEventListener('click', () => setSize(size + 2));
+  apply();
+  down?.addEventListener('click', () => setSize(size - 2));
+  up?.addEventListener('click', () => setSize(size + 2));
 }

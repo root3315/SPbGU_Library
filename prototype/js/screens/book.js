@@ -1,5 +1,5 @@
 import { cover, tile } from '../components.js';
-import { countPages, esc } from '../format.js';
+import { countPages, esc, hyphenate } from '../format.js';
 import { library } from '../library.js';
 import { nav } from '../nav.js';
 import { store, updateShelfCount } from '../store.js';
@@ -34,7 +34,7 @@ export function bookScreen({ id }) {
         <article class="book-card">
           <div class="book-main">
             <p class="book-author">${esc(b.author)}</p>
-            <h1>${esc(b.title)}</h1>
+            <h1>${hyphenate(esc(b.title))}</h1>
             <p class="book-meta">${b.year} год, ${countPages(b.pages)}</p>
             <p class="book-about">${esc(b.about)}</p>
           </div>
@@ -42,7 +42,7 @@ export function bookScreen({ id }) {
             <p class="book-how">${HOW_TO_GET[b.access]}</p>
             ${code}
             <div class="book-actions">
-              <a class="btn btn-main" href="#/read/${b.id}">Читать</a>
+              <a class="btn btn-main" href="#/read/${encodeURIComponent(b.id)}">Читать</a>
               <button type="button" class="btn btn-quiet" id="saveBook">${saveLabel(b.id)}</button>
             </div>
           </div>

@@ -66,18 +66,18 @@ document.addEventListener('keydown', (e) => {
   field.focus();
 });
 
-/* Заставка держится недолго и всегда уходит, даже если что-то пошло не так при запуске */
+/* Заставка держится недолго и уходит, даже если экран не отрисовался */
 function hideSplash() {
   const splash = document.getElementById('splash');
   setTimeout(() => {
     splash.classList.add('done');
+    root.classList.add('first');
+    setTimeout(() => root.classList.remove('first'), 900);
     splash.addEventListener('transitionend', () => splash.remove(), { once: true });
   }, 700);
 }
 
 updateShelfCount();
-root.classList.add('first');
-setTimeout(() => root.classList.remove('first'), 1800);
 try {
   route({ initial: true });
 } finally {

@@ -1,11 +1,11 @@
-import { readableNowBlock, resultItem, tile } from '../components.js';
+import { resultItem, tile } from '../components.js';
 import { countBooks, esc, isSheetLayout, reducedMotion } from '../format.js';
 import { library } from '../library.js';
 import { nav } from '../nav.js';
 
 export function homeScreen() {
   const sections = Object.entries(library.sections).map(([key, name]) => (
-    `<a class="section-tile" href="#/catalog?s=${key}"><b>${esc(name)}</b><span>${countBooks(library.countInSection(key))}</span></a>`
+    `<a class="section-tile" href="#/catalog?s=${encodeURIComponent(key)}"><b>${esc(name)}</b><span>${countBooks(library.countInSection(key))}</span></a>`
   )).join('');
 
   return {
@@ -75,7 +75,11 @@ function bind(signal) {
     box.classList.add('open');
   };
 
-  input.addEventListener('input', show);
+  input.value = nav.heroQuery;
+  input.addEventListener('input', () => {
+    nav.heroQuery = input.value;
+    show();
+  });
   input.addEventListener('focus', () => {
     show();
     if (isSheetLayout()) card.scrollIntoView({ block: 'start', behavior: reducedMotion() ? 'auto' : 'smooth' });
@@ -87,6 +91,7 @@ function bind(signal) {
     if (e.key !== 'Escape') return;
     if (e.target === input) {
       input.value = '';
+      nav.heroQuery = '';
       status.textContent = '';
     } else {
       input.focus();

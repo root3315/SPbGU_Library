@@ -1,6 +1,6 @@
 /* Каталог: состояние живёт в адресе, поэтому «Назад» и ссылка возвращают ту же выборку */
 import { tile } from '../components.js';
-import { countBooks, esc, reducedMotion, SHEET_QUERY } from '../format.js';
+import { countBooks, esc, isSheetLayout, reducedMotion, SHEET_QUERY } from '../format.js';
 import { library, SORTS } from '../library.js';
 import { nav } from '../nav.js';
 
@@ -175,6 +175,9 @@ function bind(filters, signal) {
     history.replaceState(history.state, '', address);
     nav.catalog = address;
     nav.address = address;
+    try {
+      sessionStorage.setItem('catalog', address);
+    } catch { /* приватный режим */ }
   };
 
   let shownKey = null;
@@ -186,9 +189,11 @@ function bind(filters, signal) {
     const chosen = [library.sections[filters.section], library.access[filters.access]?.label].filter(Boolean);
     const summary = `Нашлось ${countBooks(found.length)}`;
     count.textContent = chosen.length ? `${summary}: ${chosen.join(', ')}` : summary;
+    count.classList.toggle('sr', !found.length);
+    document.getElementById('sort').hidden = !found.length;
     clear.hidden = !chosen.length;
     toggle.textContent = chosen.length ? `Фильтры: ${chosen.length}` : 'Фильтры';
-    done.textContent = `Показать ${countBooks(found.length)}`;
+    done.textContent = `Показать ${countBooks(found.length).replace(/книга$/, 'книгу')}`;
     return chosen;
   }
 
@@ -202,12 +207,12 @@ function bind(filters, signal) {
         ? 'Ничего не нашлось. Уберите часть фильтров или поищите автора по фамилии.'
         : `По запросу «${esc(filters.q.trim())}» ничего нет. Проверьте написание или поищите автора по фамилии.`}</p>
          <button type="button" class="btn btn-quiet" id="catReset">${chosen.length ? 'Сбросить фильтры' : 'Сбросить поиск'}</button></div>`;
-    document.getElementById('catReset')?.addEventListener('click', reset);
+    document.getElementById('catReset')?.addEventListener('click', () => reset({ query: !chosen.length }));
   }
 
   /* Вернуть начало списка, пока он прозрачен: иначе короткая выдача дёрнет страницу */
   const keepListInView = () => {
-    const top = area.getBoundingClientRect().top + scrollY - 76;
+    const top = area.getBoundingClientRect().top + scrollY - parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop);
     if (scrollY > top) scrollTo(0, top);
   };
 
@@ -241,9 +246,13 @@ function bind(filters, signal) {
     }).catch(() => {});
   }
 
-  function reset() {
-    filters.q = ''; filters.section = ''; filters.access = '';
-    search.value = '';
+  function reset({ query = false } = {}) {
+    filters.section = '';
+    filters.access = '';
+    if (query) {
+      filters.q = '';
+      search.value = '';
+    }
     document.querySelectorAll('.filters input[value=""]').forEach((r) => { r.checked = true; });
     update();
     if (!box.classList.contains('open')) search.focus();
@@ -265,7 +274,16 @@ function bind(filters, signal) {
     }
   }
 
-  document.getElementById('catSearch').addEventListener('submit', (e) => e.preventDefault());
+  const closeSheet = () => {
+    setOpen(false);
+    toggle.focus();
+  };
+
+  /* На телефоне Enter прячет клавиатуру, иначе она закрывает результаты */
+  document.getElementById('catSearch').addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (isSheetLayout()) search.blur();
+  });
   let typing;
   search.addEventListener('input', () => {
     filters.q = search.value;
@@ -278,22 +296,15 @@ function bind(filters, signal) {
     filters[e.target.name] = e.target.value;
     update();
   });
-  clear.addEventListener('click', reset);
-  document.getElementById('sheetReset').addEventListener('click', reset);
+  clear.addEventListener('click', () => reset());
+  document.getElementById('sheetReset').addEventListener('click', () => reset());
   toggle.addEventListener('click', () => setOpen(true));
-  done.addEventListener('click', () => {
-    setOpen(false);
-    toggle.focus();
-  });
+  done.addEventListener('click', closeSheet);
   box.addEventListener('click', (e) => {
-    if (e.target !== box) return;
-    setOpen(false);
-    toggle.focus();
+    if (e.target === box) closeSheet();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape' || !box.classList.contains('open')) return;
-    setOpen(false);
-    toggle.focus();
+    if (e.key === 'Escape' && box.classList.contains('open')) closeSheet();
   }, { signal });
   matchMedia(SHEET_QUERY).addEventListener('change', () => setOpen(false), { signal });
   signal.addEventListener('abort', () => setOpen(false));
