@@ -5,7 +5,7 @@ import { library } from '../library.js';
 import { nav } from '../nav.js';
 import { missingScreen } from './missing.js';
 
-const pageUrl = (b, page) => `scans/${encodeURIComponent(b.id)}/${page}.jpg`;
+const pageUrl = (b, page) => `scans/${encodeURIComponent(b.id)}/${page}.${b.full ? 'webp' : 'jpg'}`;
 const ARROW = { prev: 'M12.5 4.5 7 10l5.5 5.5', next: 'M7.5 4.5 13 10l-5.5 5.5' };
 const arrow = (name) => `<svg viewBox="0 0 20 20" aria-hidden="true"><path d="${ARROW[name]}"/></svg>`;
 const FRAGMENT_NOTE = 'Это страницы из скана, не вся книга.';
@@ -75,7 +75,8 @@ function bind(b, first, signal) {
   let shownText = String(first);
   function paint(pages) {
     const shown = [pages.left, pages.right].filter(Boolean);
-    note.textContent = b.scans === 1 ? ONE_NOTE : shown.includes(b.scans) ? LAST_NOTE : FRAGMENT_NOTE;
+    if (b.full) note.textContent = b.source;
+    else note.textContent = b.scans === 1 ? ONE_NOTE : shown.includes(b.scans) ? LAST_NOTE : FRAGMENT_NOTE;
     if (!form) return;
     shownText = shown.join('–');
     word.textContent = shown.length > 1 ? 'Страницы' : 'Страница';
@@ -170,7 +171,7 @@ function bind(b, first, signal) {
     const target = Number(input.value);
     if (target < 1 || target > b.scans) {
       setWrong(true);
-      status.textContent = `Такой страницы нет, в скане страниц: ${b.scans}`;
+      status.textContent = `Такой страницы нет, всего страниц: ${b.scans}`;
       input.select();
       return;
     }

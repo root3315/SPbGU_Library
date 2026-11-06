@@ -28,9 +28,9 @@ export function bookScreen({ id }) {
             <p class="book-about">${esc(b.about)}</p>
           </div>
           <div class="book-side">
-            <p class="book-how">Полного текста пока нет. ${b.scans > 1 ? `Из скана доступно страниц: ${b.scans}.` : 'Из скана доступна одна страница.'}</p>
+            <p class="book-how">${b.full ? `Полный текст, страниц: ${b.scans}. ${esc(b.source)}` : `Полного текста пока нет. ${b.scans > 1 ? `Из скана доступно страниц: ${b.scans}.` : 'Из скана доступна одна страница.'}`}</p>
             <div class="book-actions">
-              <a class="btn btn-main" href="#/read/${encodeURIComponent(b.id)}">${b.scans > 1 ? 'Смотреть страницы' : 'Смотреть страницу'}</a>
+              <a class="btn btn-main" href="#/read/${encodeURIComponent(b.id)}">${b.full ? 'Читать' : b.scans > 1 ? 'Смотреть страницы' : 'Смотреть страницу'}</a>
               <button type="button" class="btn btn-quiet" id="saveBook">${saveLabel(b.id)}</button>
             </div>
           </div>
